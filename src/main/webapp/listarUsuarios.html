@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listar Usuários - TransCarga</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Lista de Usuários</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuário</th>
+                        <th>Papel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% 
+                    br.com.transcarga.persistencia.UserDAO dao = new br.com.transcarga.persistencia.UserDAO();
+                    java.util.List<br.com.transcarga.persistencia.User> usuarios = dao.listar();
+                    if (usuarios != null && !usuarios.isEmpty()) {
+                        for (br.com.transcarga.persistencia.User u : usuarios) {
+                    %>
+                    <tr>
+                        <td><%= u.getId() %></td>
+                        <td><%= u.getUsername() %></td>
+                        <td><%= u.getRole() %></td>
+                    </tr>
+                    <% 
+                        }
+                    } else {
+                    %>
+                    <tr>
+                        <td colspan="3" style="text-align: center;">Nenhum usuário cadastrado.</td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        <a href="index.html" class="nav-link">Voltar para Home</a>
+    </div>
+</body>
+</html>

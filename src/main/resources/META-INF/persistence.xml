@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+  <persistence-unit name="TransCargaPU" transaction-type="RESOURCE_LOCAL">
+    <class>br.com.transcarga.persistencia.Frete</class>
+    <class>br.com.transcarga.persistencia.User</class>
+
+    <properties>
+      <!-- JDBC -->
+      <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/transcarga?useSSL=false&amp;serverTimezone=UTC"/>
+      <property name="jakarta.persistence.jdbc.user" value="root"/>
+      <property name="jakarta.persistence.jdbc.password" value="00"/>
+
+      <!-- Hibernate -->
+      <!-- MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialec
+        <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>-->
+      <property name="jakarta.persistence.schema-generation.database.action" value="update"/><!--create,update or none-->
+      <property name="hibernate.show_sql" value="true"/>
+      <property name="hibernate.format_sql" value="true"/>
+    </properties>
+  </persistence-unit>
+</persistence>
