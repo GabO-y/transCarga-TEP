@@ -1,6 +1,31 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="br.com.transcarga.persistencia.User" %>
 <%@ page import="java.util.List" %>
+<%
+    // Verifica se o usuário está logado e é admin
+    User usuarioLogado = (User) session.getAttribute("user");
+    boolean isAdmin = false;
+    if (usuarioLogado != null && usuarioLogado.getRole() != null) {
+        isAdmin = "admin".equalsIgnoreCase(usuarioLogado.getRole());
+    }
+
+    if (usuarioLogado == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+
+    if (!isAdmin) {
+        response.sendRedirect("home.jsp");
+        return;
+    }
+
+    // Se a lista de usuários não foi passada via atributo, redireciona para o Servlet
+    List<User> usuarios = (List<User>) request.getAttribute("usuarios");
+    if (usuarios == null) {
+        response.sendRedirect("usuario");
+        return;
+    }
+%>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -10,10 +35,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <%
-    User user = (User) session.getAttribute("user");
-    boolean isAdmin = (user != null && "admin".equals(user.getRole()));
-    %>
     <div class="container">
         <% if (isAdmin) { %>
         <a href="home.jsp" class="nav-link" style="margin-top:0; margin-bottom:20px; display:inline-block;">← Voltar para Home</a>
@@ -21,11 +42,11 @@
         <a href="logout" class="nav-link" style="margin-top:0; margin-bottom:20px; display:inline-block;">← Sair (Logout)</a>
         <% } %>
         <h2>Lista de Usuários</h2>
-        
+
         <% if (request.getParameter("success") != null) { %>
             <div class="success-message">Usuário cadastrado com sucesso!</div>
         <% } %>
-        
+
         <div class="table-responsive">
             <table>
                 <thead>
@@ -37,7 +58,6 @@
                 </thead>
                 <tbody>
                     <%
-                    List<User> usuarios = (List<User>) request.getAttribute("usuarios");
                     System.out.println("[JSP] Listando usuários - quantidade: " + (usuarios != null ? usuarios.size() : "null"));
                     if (usuarios != null && !usuarios.isEmpty()) {
                         for (User u : usuarios) {
@@ -52,13 +72,18 @@
                     } else {
                     %>
                     <tr>
-                        <td colspan="3" style="text-align: center;">Nenhum usuário cadastrado.</td>
+                        <td colspan="3" style="text-align:center;">Nenhum usuário cadastrado.</td>
                     </tr>
-                    <% } %>
+                    <%
+                    }
+                    %>
                 </tbody>
             </table>
         </div>
-        <a href="home.jsp" class="nav-link">Voltar para Home</a>
+        <a href="cadastrarUsuario.jsp" class="nav-link">Cadastrar Novo Usuário</a>
     </div>
+    <footer>
+        © Mossoró, 2025 - TransCarga
+    </footer>
 </body>
 </html>

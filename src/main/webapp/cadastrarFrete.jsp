@@ -20,7 +20,7 @@
         <a href="logout" class="nav-link" style="margin-top:0; margin-bottom:20px; display:inline-block;">← Sair (Logout)</a>
         <% } %>
         <h2>Cadastro de Frete</h2>
-        <form method="post" action="cadastrarFrete">
+        <form method="post" action="FreteServlet">
             <div>
                 <label for="origem">Origem:</label>
                 <input type="text" id="origem" name="origem" maxlength="100" required>

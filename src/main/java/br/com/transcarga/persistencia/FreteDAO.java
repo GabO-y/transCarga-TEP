@@ -5,10 +5,14 @@ import java.util.List;
 
 public class FreteDAO {
 
-    private EntityManagerFactory emf = Persistence.createEntityManagerFactory("TransCargaPU");
+    private static final EntityManagerFactory EMF = Persistence.createEntityManagerFactory("TransCargaPU");
+
+    private EntityManager getEM() {
+        return EMF.createEntityManager();
+    }
 
     public void cadastrarFrete(Frete frete) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = getEM();
         try {
             em.getTransaction().begin();
             em.persist(frete);
@@ -19,33 +23,31 @@ public class FreteDAO {
     }
 
     public List<Frete> listarFretes() {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = getEM();
         try {
             return em.createQuery("SELECT f FROM Frete f", Frete.class).getResultList();
         } catch (Exception e) {
             e.printStackTrace();
-            return List.of(); // retorna lista vazia em caso de erro
+            return List.of();
         } finally {
-            if (em != null && em.isOpen())
-                em.close();
+            em.close();
         }
     }
 
     public Frete buscarPorId(Long id) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = getEM();
         try {
             return em.find(Frete.class, id);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         } finally {
-            if (em != null && em.isOpen())
-                em.close();
+            em.close();
         }
     }
 
     public void atualizarFrete(Frete frete) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = getEM();
         try {
             em.getTransaction().begin();
             em.merge(frete);

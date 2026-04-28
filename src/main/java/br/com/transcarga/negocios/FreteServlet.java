@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 @WebServlet("/FreteServlet")
 public class FreteServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	private static final FreteDAO dao = new FreteDAO();
 
 	private Map<String, String> getStatusColor(String status) {
 		Map<String, String> colorMap = new HashMap<>();
@@ -35,23 +36,24 @@ public class FreteServlet extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		FreteDAO dao = new FreteDAO();
 		List<Frete> fretes = dao.listarFretes();
 
 		// Filtro por status
 		String filtroStatus = request.getParameter("filtroStatus");
 		if (filtroStatus != null && !filtroStatus.isEmpty()) {
+			String statusFiltro = filtroStatus;
 			fretes = fretes.stream()
-					.filter(f -> f.getStatus() != null && f.getStatus().equals(filtroStatus))
+					.filter(f -> f.getStatus() != null && f.getStatus().equals(statusFiltro))
 					.collect(Collectors.toList());
 		}
 
 		// Filtro por transportadora
 		String filtroTransportadora = request.getParameter("filtroTransportadora");
 		if (filtroTransportadora != null && !filtroTransportadora.isEmpty()) {
+			String transpFiltro = filtroTransportadora.toLowerCase();
 			fretes = fretes.stream()
 					.filter(f -> f.getTransportadora() != null
-							&& f.getTransportadora().toLowerCase().contains(filtroTransportadora.toLowerCase()))
+							&& f.getTransportadora().toLowerCase().contains(transpFiltro))
 					.collect(Collectors.toList());
 		}
 
@@ -165,7 +167,6 @@ public class FreteServlet extends HttpServlet {
 		frete.setDataEntrega(dataEntrega);
 		frete.setObservacoes(observacoes);
 
-		FreteDAO dao = new FreteDAO();
 		dao.cadastrarFrete(frete);
 		response.sendRedirect("listarFretes.jsp");
 	}
