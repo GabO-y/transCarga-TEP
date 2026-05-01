@@ -7,6 +7,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Frete - TransCarga</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        function atualizarDataEntrega() {
+            var status = document.getElementById('status').value;
+            var dataEntrega = document.getElementById('dataEntrega');
+            if (status === 'Entregue') {
+                dataEntrega.required = true;
+                dataEntrega.disabled = false;
+            } else {
+                dataEntrega.required = false;
+                dataEntrega.value = '';
+                dataEntrega.disabled = true;
+            }
+        }
+        window.onload = atualizarDataEntrega;
+    </script>
 </head>
 <body>
     <%
@@ -44,7 +59,7 @@
             </div>
             <div>
                 <label for="status">Status:</label>
-                <select id="status" name="status" required>
+                <select id="status" name="status" required onchange="atualizarDataEntrega()">
                     <option value="Pendente" <%= "Pendente".equals(frete.getStatus()) ? "selected" : "" %>>Pendente</option>
                     <option value="Em trânsito" <%= "Em trânsito".equals(frete.getStatus()) ? "selected" : "" %>>Em trânsito</option>
                     <option value="Entregue" <%= "Entregue".equals(frete.getStatus()) ? "selected" : "" %>>Entregue</option>

@@ -50,23 +50,137 @@ public class FreteServlet extends HttpServlet {
 			fretes = dao.listarFretes();
 		}
 
-		// Filtro por status
+		// Filtros
 		String filtroStatus = request.getParameter("filtroStatus");
+		System.out.println("[FILTRO] Status recebido: " + filtroStatus);
 		if (filtroStatus != null && !filtroStatus.isEmpty()) {
-			String statusFiltro = filtroStatus;
 			fretes = fretes.stream()
-					.filter(f -> f.getStatus() != null && f.getStatus().equals(statusFiltro))
+					.filter(f -> f.getStatus() != null && f.getStatus().equals(filtroStatus))
 					.collect(Collectors.toList());
+			System.out.println("[FILTRO] Após filtro status: " + fretes.size() + " fretes");
 		}
 
-		// Filtro por transportadora
 		String filtroTransportadora = request.getParameter("filtroTransportadora");
+		System.out.println("[FILTRO] Transportadora recebida: " + filtroTransportadora);
 		if (filtroTransportadora != null && !filtroTransportadora.isEmpty()) {
-			String transpFiltro = filtroTransportadora.toLowerCase();
 			fretes = fretes.stream()
 					.filter(f -> f.getTransportadora() != null
-							&& f.getTransportadora().toLowerCase().contains(transpFiltro))
+							&& f.getTransportadora().toLowerCase().contains(filtroTransportadora.toLowerCase()))
 					.collect(Collectors.toList());
+			System.out.println("[FILTRO] Após filtro transportadora: " + fretes.size() + " fretes");
+		}
+
+		String filtroOrigem = request.getParameter("filtroOrigem");
+		System.out.println("[FILTRO] Origem recebida: " + filtroOrigem);
+		if (filtroOrigem != null && !filtroOrigem.isEmpty()) {
+			fretes = fretes.stream()
+					.filter(f -> f.getOrigem() != null
+							&& f.getOrigem().toLowerCase().contains(filtroOrigem.toLowerCase()))
+					.collect(Collectors.toList());
+			System.out.println("[FILTRO] Após filtro origem: " + fretes.size() + " fretes");
+		}
+
+		String filtroDestino = request.getParameter("filtroDestino");
+		System.out.println("[FILTRO] Destino recebido: " + filtroDestino);
+		if (filtroDestino != null && !filtroDestino.isEmpty()) {
+			fretes = fretes.stream()
+					.filter(f -> f.getDestino() != null
+							&& f.getDestino().toLowerCase().contains(filtroDestino.toLowerCase()))
+					.collect(Collectors.toList());
+			System.out.println("[FILTRO] Após filtro destino: " + fretes.size() + " fretes");
+		}
+
+		String filtroPesoMin = request.getParameter("filtroPesoMin");
+		System.out.println("[FILTRO] PesoMin recebido: " + filtroPesoMin);
+		if (filtroPesoMin != null && !filtroPesoMin.isEmpty()) {
+			try {
+				double min = Double.parseDouble(filtroPesoMin);
+				System.out.println("[FILTRO] Aplicando peso min: " + min);
+				fretes = fretes.stream()
+						.filter(f -> f.getPeso() >= min)
+						.collect(Collectors.toList());
+				System.out.println("[FILTRO] Após filtro peso min: " + fretes.size() + " fretes");
+			} catch (NumberFormatException e) {}
+		}
+
+		String filtroPesoMax = request.getParameter("filtroPesoMax");
+		System.out.println("[FILTRO] PesoMax recebido: " + filtroPesoMax);
+		if (filtroPesoMax != null && !filtroPesoMax.isEmpty()) {
+			try {
+				double max = Double.parseDouble(filtroPesoMax);
+				System.out.println("[FILTRO] Aplicando peso max: " + max);
+				fretes = fretes.stream()
+						.filter(f -> f.getPeso() <= max)
+						.collect(Collectors.toList());
+				System.out.println("[FILTRO] Após filtro peso max: " + fretes.size() + " fretes");
+			} catch (NumberFormatException e) {}
+		}
+
+		String filtroValorMin = request.getParameter("filtroValorMin");
+		if (filtroValorMin != null && !filtroValorMin.isEmpty()) {
+			try {
+				double min = Double.parseDouble(filtroValorMin);
+				fretes = fretes.stream()
+						.filter(f -> f.getValor() >= min)
+						.collect(Collectors.toList());
+			} catch (NumberFormatException e) {}
+		}
+
+		String filtroValorMax = request.getParameter("filtroValorMax");
+		System.out.println("[FILTRO] filtroValorMax recebido: " + filtroValorMax);
+		if (filtroValorMax != null && !filtroValorMax.isEmpty()) {
+			try {
+				double max = Double.parseDouble(filtroValorMax);
+				System.out.println("[FILTRO] Aplicando filtro valor max: " + max);
+				fretes = fretes.stream()
+						.filter(f -> f.getValor() <= max)
+						.collect(Collectors.toList());
+			} catch (NumberFormatException e) {}
+		}
+
+		String filtroDataInicio = request.getParameter("filtroDataInicio");
+		System.out.println("[FILTRO] filtroDataInicio recebido: '" + filtroDataInicio + "'");
+		if (filtroDataInicio != null && !filtroDataInicio.isEmpty()) {
+			try {
+				LocalDate inicio = LocalDate.parse(filtroDataInicio);
+				System.out.println("[FILTRO] Data início parseada: " + inicio);
+				fretes = fretes.stream()
+						.filter(f -> f.getDataFrete() != null && !f.getDataFrete().isBefore(inicio))
+						.collect(Collectors.toList());
+				System.out.println("[FILTRO] Após filtro data início (dataFrete >=): " + fretes.size() + " fretes");
+			} catch (Exception e) {
+				System.out.println("[FILTRO] Erro ao parsear data início: " + filtroDataInicio + " - " + e.getMessage());
+			}
+		}
+
+		String filtroDataFim = request.getParameter("filtroDataFim");
+		System.out.println("[FILTRO] filtroDataFim recebido: '" + filtroDataFim + "'");
+		if (filtroDataFim != null && !filtroDataFim.isEmpty()) {
+			try {
+				LocalDate fim = LocalDate.parse(filtroDataFim);
+				System.out.println("[FILTRO] Data fim parseada: " + fim);
+				// Filtra por dataEntrega (data de entrega) <= fim
+				fretes = fretes.stream()
+						.filter(f -> f.getDataEntrega() != null && !f.getDataEntrega().isAfter(fim))
+						.collect(Collectors.toList());
+				System.out.println("[FILTRO] Após filtro data fim (dataEntrega <=): " + fretes.size() + " fretes");
+			} catch (Exception e) {
+				System.out.println("[FILTRO] Erro ao parsear data fim: " + filtroDataFim + " - " + e.getMessage());
+			}
+		}
+
+		String filtroUserId = request.getParameter("filtroUserId");
+
+		// Filtro por usuário (apenas admin)
+		if (userLogado != null && "ADMIN".equalsIgnoreCase(userLogado.getRole())) {
+			if (filtroUserId != null && !filtroUserId.isEmpty()) {
+				try {
+					Long userIdFiltro = Long.parseLong(filtroUserId);
+					fretes = fretes.stream()
+							.filter(f -> f.getUser() != null && f.getUser().getId().equals(userIdFiltro))
+							.collect(Collectors.toList());
+				} catch (NumberFormatException e) {}
+			}
 		}
 
 		request.setCharacterEncoding("UTF-8");
@@ -82,20 +196,30 @@ public class FreteServlet extends HttpServlet {
 
 		// Formulário de filtro
 		out.println("<div class='filtro-container'>");
-		out.println("<form method='get' action='" + request.getContextPath() + "/FreteServlet' class='filtro-form'>");
-		out.println("<select name='filtroStatus' class='filtro-select'>");
+		out.println("<form method='get' action='" + request.getContextPath() + "/FreteServlet' style='display:block !important; margin-bottom:15px;'>");
+		out.println("<select name='filtroStatus' style='display:inline-block !important; width:auto !important; padding:8px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin:2px;'>");
 		out.println("<option value=''>Todos os Status</option>");
-		out.println("<option value='Pendente' " + ("Pendente".equals(filtroStatus) ? "selected" : "")
-				+ ">Pendente</option>");
-		out.println("<option value='Em trânsito' " + ("Em trânsito".equals(filtroStatus) ? "selected" : "")
-				+ ">Em trânsito</option>");
-		out.println("<option value='Entregue' " + ("Entregue".equals(filtroStatus) ? "selected" : "")
-				+ ">Entregue</option>");
+		out.println("<option value='Pendente' " + ("Pendente".equals(filtroStatus) ? "selected" : "") + ">Pendente</option>");
+		out.println("<option value='Em trânsito' " + ("Em trânsito".equals(filtroStatus) ? "selected" : "") + ">Em trânsito</option>");
+		out.println("<option value='Entregue' " + ("Entregue".equals(filtroStatus) ? "selected" : "") + ">Entregue</option>");
 		out.println("</select>");
-		out.println("<input type='text' name='filtroTransportadora' placeholder='Filtrar por transportadora' value='"
-				+ (filtroTransportadora != null ? filtroTransportadora : "") + "' class='filtro-input'>");
-		out.println("<button type='submit' class='filtro-btn'>🔍 Filtrar</button>");
-		out.println("<a href='" + request.getContextPath() + "/FreteServlet' class='filtro-btn-reset'>Limpar Filtros</a>");
+		out.println("<input type='text' name='filtroTransportadora' placeholder='Transportadora' value='" + (filtroTransportadora != null ? filtroTransportadora : "") + "' style='display:inline-block !important; width:auto !important; padding:8px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin:2px;'>");
+		out.println("<input type='text' name='filtroOrigem' placeholder='Origem' value='" + (filtroOrigem != null ? filtroOrigem : "") + "' style='display:inline-block !important; width:auto !important; padding:8px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin:2px;'>");
+		out.println("<input type='text' name='filtroDestino' placeholder='Destino' value='" + (filtroDestino != null ? filtroDestino : "") + "' style='display:inline-block !important; width:auto !important; padding:8px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin:2px;'>");
+		out.println("<span style='display:inline-block !important; margin:2px; font-size:0.8em; color:#666;'>Peso Min</span><input type='number' step='0.01' name='filtroPesoMin' placeholder='Mín' value='" + (filtroPesoMin != null ? filtroPesoMin : "") + "' style='display:inline-block !important; width:75px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin-left:2px;'>");
+		out.println("<span style='display:inline-block !important; margin:2px; font-size:0.8em; color:#666;'>Peso Máx</span><input type='number' step='0.01' name='filtroPesoMax' placeholder='Máx' value='" + (filtroPesoMax != null ? filtroPesoMax : "") + "' style='display:inline-block !important; width:75px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin-left:2px;'>");
+		out.println("<span style='display:inline-block !important; margin:2px; font-size:0.8em; color:#666;'>Valor Min (R$)</span><input type='number' step='0.01' name='filtroValorMin' placeholder='Mín' value='" + (filtroValorMin != null ? filtroValorMin : "") + "' style='display:inline-block !important; width:80px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin-left:2px;'>");
+		out.println("<span style='display:inline-block !important; margin:2px; font-size:0.8em; color:#666;'>Valor Máx (R$)</span><input type='number' step='0.01' name='filtroValorMax' placeholder='Máx' value='" + (filtroValorMax != null ? filtroValorMax : "") + "' style='display:inline-block !important; width:80px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin-left:2px;'>");
+		out.println("<span style='display:inline-block !important; margin:2px; font-size:0.8em; color:#666;'>Dt.Início</span><input type='date' name='filtroDataInicio' value='" + (filtroDataInicio != null ? filtroDataInicio : "") + "' style='display:inline-block !important; width:140px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin-left:2px;'>");
+		out.println("<span style='display:inline-block !important; margin:2px; font-size:0.8em; color:#666;'>Dt.Fim</span><input type='date' name='filtroDataFim' value='" + (filtroDataFim != null ? filtroDataFim : "") + "' style='display:inline-block !important; width:140px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin-left:2px;'>");
+
+		// Filtro por usuário (apenas admin)
+		if (userLogado != null && "ADMIN".equalsIgnoreCase(userLogado.getRole())) {
+			out.println("<input type='number' name='filtroUserId' placeholder='ID Usuário' value='" + (filtroUserId != null ? filtroUserId : "") + "' style='display:inline-block !important; width:90px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin:2px;'>");
+		}
+
+		out.println("<button type='submit' style='display:inline-block !important; padding:8px 15px; background:#2c7cbd; color:white; border:none; border-radius:4px; font-size:0.9em; cursor:pointer; margin:2px;'>Filtrar</button>");
+		out.println("<a href='" + request.getContextPath() + "/FreteServlet' style='display:inline-block !important; padding:8px 15px; background:#f5f5f5; color:#333; border:1px solid #ddd; border-radius:4px; font-size:0.9em; text-decoration:none; margin:2px;'>Limpar</a>");
 		out.println("</form>");
 		out.println("</div>");
 
@@ -185,7 +309,11 @@ public class FreteServlet extends HttpServlet {
 				status = "Pendente";
 			}
 			LocalDate dataFrete = LocalDate.parse(request.getParameter("dataFrete"));
-			LocalDate dataEntrega = LocalDate.parse(request.getParameter("dataEntrega"));
+			LocalDate dataEntrega = null;
+			String dataEntregaStr = request.getParameter("dataEntrega");
+			if (dataEntregaStr != null && !dataEntregaStr.trim().isEmpty()) {
+				dataEntrega = LocalDate.parse(dataEntregaStr);
+			}
 			String observacoes = request.getParameter("observacoes");
 
 			String userIdStr = request.getParameter("userId");
@@ -212,7 +340,16 @@ public class FreteServlet extends HttpServlet {
 			frete.setUser(userAssociado);
 
 			dao.cadastrarFrete(frete);
-			response.sendRedirect("listarFretes.jsp?sucesso=cadastrado");
+			// Redireciona o parent para a listagem (evita aninhamento de iframes)
+			response.setContentType("text/html; charset=UTF-8");
+			PrintWriter out = response.getWriter();
+			out.println("<script>");
+			out.println("  if (window.parent) {");
+			out.println("    window.parent.document.getElementById('mainFrame').src = '" + request.getContextPath() + "/FreteServlet';");
+			out.println("  } else {");
+			out.println("    window.location.href = '" + request.getContextPath() + "/home.jsp';");
+			out.println("  }");
+			out.println("</script>");
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.sendRedirect("cadastrarFrete.jsp?erro=dados-invalidos");

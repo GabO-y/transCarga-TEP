@@ -100,7 +100,11 @@ public class EditarFreteServlet extends HttpServlet {
             String transportadora = request.getParameter("transportadora");
             String status = request.getParameter("status");
             LocalDate dataFrete = LocalDate.parse(request.getParameter("dataFrete"));
-            LocalDate dataEntrega = LocalDate.parse(request.getParameter("dataEntrega"));
+            LocalDate dataEntrega = null;
+            String dataEntregaStr = request.getParameter("dataEntrega");
+            if (dataEntregaStr != null && !dataEntregaStr.trim().isEmpty()) {
+                dataEntrega = LocalDate.parse(dataEntregaStr);
+            }
             String observacoes = request.getParameter("observacoes");
             String userIdStr = request.getParameter("userId");
 
