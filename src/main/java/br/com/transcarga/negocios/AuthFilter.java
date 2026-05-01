@@ -40,11 +40,11 @@ public class AuthFilter implements Filter {
         String role = usuario.getRole();
 
         if ("USER".equals(role)) {
-            // USER só pode acessar listar fretes
-            if (uri.contains("listarFretes") || uri.contains("FreteServlet")) {
+            // USER só pode acessar home.jsp, listar fretes e FreteServlet
+            if (uri.endsWith("home.jsp") || uri.contains("listarFretes") || uri.contains("FreteServlet")) {
                 chain.doFilter(request, response);
             } else {
-                resp.sendRedirect(contextPath + "/listarFretes.jsp");
+                resp.sendRedirect(contextPath + "/home.jsp");
             }
         } else if ("ADMIN".equals(role)) {
             // ADMIN tem acesso irrestrito

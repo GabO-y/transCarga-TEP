@@ -2,6 +2,8 @@ package br.com.transcarga.negocios;
 
 import br.com.transcarga.persistencia.Frete;
 import br.com.transcarga.persistencia.FreteDAO;
+import br.com.transcarga.persistencia.User;
+import br.com.transcarga.persistencia.UserDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -36,7 +38,17 @@ public class FreteServlet extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		List<Frete> fretes = dao.listarFretes();
+		List<Frete> fretes;
+		HttpSession session = request.getSession(false);
+		User userLogado = (session != null) ? (User) session.getAttribute("user") : null;
+
+		// Se for USER, filtra apenas fretes associados a ele
+		if (userLogado != null && "USER".equalsIgnoreCase(userLogado.getRole())) {
+			fretes = dao.listarFretesPorUser(userLogado.getId());
+		} else {
+			// ADMIN ou não logado: lista todos
+			fretes = dao.listarFretes();
+		}
 
 		// Filtro por status
 		String filtroStatus = request.getParameter("filtroStatus");
@@ -70,7 +82,7 @@ public class FreteServlet extends HttpServlet {
 
 		// Formulário de filtro
 		out.println("<div class='filtro-container'>");
-		out.println("<form method='get' action='/transcarga/FreteServlet' class='filtro-form'>");
+		out.println("<form method='get' action='" + request.getContextPath() + "/FreteServlet' class='filtro-form'>");
 		out.println("<select name='filtroStatus' class='filtro-select'>");
 		out.println("<option value=''>Todos os Status</option>");
 		out.println("<option value='Pendente' " + ("Pendente".equals(filtroStatus) ? "selected" : "")
@@ -83,7 +95,7 @@ public class FreteServlet extends HttpServlet {
 		out.println("<input type='text' name='filtroTransportadora' placeholder='Filtrar por transportadora' value='"
 				+ (filtroTransportadora != null ? filtroTransportadora : "") + "' class='filtro-input'>");
 		out.println("<button type='submit' class='filtro-btn'>🔍 Filtrar</button>");
-		out.println("<a href='/transcarga/FreteServlet' class='filtro-btn-reset'>Limpar Filtros</a>");
+		out.println("<a href='" + request.getContextPath() + "/FreteServlet' class='filtro-btn-reset'>Limpar Filtros</a>");
 		out.println("</form>");
 		out.println("</div>");
 
@@ -106,6 +118,8 @@ public class FreteServlet extends HttpServlet {
 					+ "<th>Status</th>"
 					+ "<th>Data Frete</th>"
 					+ "<th>Data Entrega</th>"
+					+ "<th>Usuário</th>"
+					+ "<th>Ações</th>"
 					+ "</tr></thead>");
 
 			for (Frete f : fretes) {
@@ -129,10 +143,24 @@ public class FreteServlet extends HttpServlet {
 					}
 				}
 
-				out.printf(
-						"<tr><td>%d</td><td>%s</td><td>%s</td><td>%.2f</td><td class='valor-cell'>R$ %.2f</td><td>%s</td><td class='status-badge %s'>%s</td><td class='data-cell'>%s</td><td class='data-cell'>%s</td></tr>",
+				String userName = (f.getUser() != null && f.getUser().getUsername() != null) ? f.getUser().getUsername() : "-";
+
+				// Verifica se é ADMIN para mostrar link de edição
+			HttpSession sessao = request.getSession(false);
+			boolean isAdmin = false;
+			if (sessao != null) {
+				User usuarioLogado = (User) sessao.getAttribute("user");
+				if (usuarioLogado != null && usuarioLogado.getRole() != null) {
+					isAdmin = "ADMIN".equalsIgnoreCase(usuarioLogado.getRole());
+				}
+			}
+
+			String acoes = isAdmin ? "<a href='" + request.getContextPath() + "/EditarFreteServlet?id=" + f.getId() + "' title='Editar'>✎ Editar</a>" : "-";
+
+			out.printf(
+						"<tr><td>%d</td><td>%s</td><td>%s</td><td>%.2f</td><td class='valor-cell'>R$ %.2f</td><td>%s</td><td class='status-badge %s'>%s</td><td class='data-cell'>%s</td><td class='data-cell'>%s</td><td>%s</td><td>%s</td></tr>",
 						f.getId(), origem, destino, f.getPeso(), f.getValor(), transportadora,
-						statusClass, statusStr, dataFrete, dataEntrega);
+						statusClass, statusStr, dataFrete, dataEntrega, userName, acoes);
 			}
 			out.println("</tbody></table>");
 			out.println("</div>");
@@ -146,29 +174,49 @@ public class FreteServlet extends HttpServlet {
 		request.setCharacterEncoding("UTF-8");
 		response.setContentType("text/html; charset=UTF-8");
 
-		String origem = request.getParameter("origem");
-		String destino = request.getParameter("destino");
-		double peso = Double.parseDouble(request.getParameter("peso"));
-		double valor = Double.parseDouble(request.getParameter("valor"));
-		String transportadora = request.getParameter("transportadora");
-		String status = "Pendente"; // Status padrão
-		LocalDate dataFrete = LocalDate.parse(request.getParameter("dataFrete"));
-		LocalDate dataEntrega = LocalDate.parse(request.getParameter("dataEntrega"));
-		String observacoes = request.getParameter("observacoes");
+		try {
+			String origem = request.getParameter("origem");
+			String destino = request.getParameter("destino");
+			double peso = Double.parseDouble(request.getParameter("peso"));
+			double valor = Double.parseDouble(request.getParameter("valor"));
+			String transportadora = request.getParameter("transportadora");
+			String status = request.getParameter("status");
+			if (status == null || status.trim().isEmpty()) {
+				status = "Pendente";
+			}
+			LocalDate dataFrete = LocalDate.parse(request.getParameter("dataFrete"));
+			LocalDate dataEntrega = LocalDate.parse(request.getParameter("dataEntrega"));
+			String observacoes = request.getParameter("observacoes");
 
-		Frete frete = new Frete();
-		frete.setOrigem(origem);
-		frete.setDestino(destino);
-		frete.setPeso(peso);
-		frete.setValor(valor);
-		frete.setTransportadora(transportadora);
-		frete.setStatus(status);
-		frete.setDataFrete(dataFrete);
-		frete.setDataEntrega(dataEntrega);
-		frete.setObservacoes(observacoes);
+			String userIdStr = request.getParameter("userId");
+			User userAssociado = null;
+			if (userIdStr != null && !userIdStr.trim().isEmpty()) {
+				try {
+					UserDAO userDAO = new UserDAO();
+					userAssociado = userDAO.buscarPorId(Long.parseLong(userIdStr));
+				} catch (NumberFormatException e) {
+					// userId inválido, ignora
+				}
+			}
 
-		dao.cadastrarFrete(frete);
-		response.sendRedirect("listarFretes.jsp");
+			Frete frete = new Frete();
+			frete.setOrigem(origem);
+			frete.setDestino(destino);
+			frete.setPeso(peso);
+			frete.setValor(valor);
+			frete.setTransportadora(transportadora);
+			frete.setStatus(status);
+			frete.setDataFrete(dataFrete);
+			frete.setDataEntrega(dataEntrega);
+			frete.setObservacoes(observacoes);
+			frete.setUser(userAssociado);
+
+			dao.cadastrarFrete(frete);
+			response.sendRedirect("listarFretes.jsp?sucesso=cadastrado");
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.sendRedirect("cadastrarFrete.jsp?erro=dados-invalidos");
+		}
 	}
 
 }

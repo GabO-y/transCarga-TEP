@@ -24,14 +24,8 @@ public class LoginServlet extends HttpServlet {
         
         if (user != null) {
             req.getSession().setAttribute("user", user);
-            String role = user.getRole();
-            if ("admin".equalsIgnoreCase(role)) {
-                System.out.println("[LOGIN] Admin " + username + " logado. Redirecionando para home.jsp");
-                resp.sendRedirect("home.jsp");
-            } else {
-                System.out.println("[LOGIN] User " + username + " logado. Redirecionando para listarFretes.jsp");
-                resp.sendRedirect("listarFretes.jsp");
-            }
+            System.out.println("[LOGIN] " + username + " logado. Redirecionando para home.jsp");
+            resp.sendRedirect("home.jsp");
         } else {
             System.out.println("[LOGIN] Falha no login para " + username + ". Redirecionando para login.jsp?error=1");
             resp.sendRedirect("login.jsp?error=1");

@@ -68,4 +68,23 @@ public class UserDAO {
             em.close();
         }
     }
+
+    public List<User> listarApenasUsers() {
+        EntityManager em = getEM();
+        try {
+            return em.createQuery("SELECT u FROM User u WHERE u.role = 'USER'", User.class)
+                     .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public User buscarPorId(Long id) {
+        EntityManager em = getEM();
+        try {
+            return em.find(User.class, id);
+        } finally {
+            em.close();
+        }
+    }
 }

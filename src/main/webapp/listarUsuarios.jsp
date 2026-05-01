@@ -36,11 +36,6 @@
 </head>
 <body>
     <div class="container">
-        <% if (isAdmin) { %>
-        <a href="home.jsp" class="nav-link" style="margin-top:0; margin-bottom:20px; display:inline-block;">← Voltar para Home</a>
-        <% } else { %>
-        <a href="logout" class="nav-link" style="margin-top:0; margin-bottom:20px; display:inline-block;">← Sair (Logout)</a>
-        <% } %>
         <h2>Lista de Usuários</h2>
 
         <% if (request.getParameter("success") != null) { %>
@@ -80,10 +75,6 @@
                 </tbody>
             </table>
         </div>
-        <a href="cadastrarUsuario.jsp" class="nav-link">Cadastrar Novo Usuário</a>
     </div>
-    <footer>
-        © Mossoró, 2025 - TransCarga
-    </footer>
 </body>
 </html>

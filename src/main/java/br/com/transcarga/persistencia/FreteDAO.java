@@ -61,4 +61,18 @@ public class FreteDAO {
             em.close();
         }
     }
+
+    public List<Frete> listarFretesPorUser(Long userId) {
+        EntityManager em = getEM();
+        try {
+            if (userId != null) {
+                return em.createQuery("SELECT f FROM Frete f WHERE f.user.id = :userId", Frete.class)
+                         .setParameter("userId", userId)
+                         .getResultList();
+            }
+            return listarFretes();
+        } finally {
+            em.close();
+        }
+    }
 }

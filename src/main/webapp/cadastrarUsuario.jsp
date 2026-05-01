@@ -48,7 +48,6 @@
             </div>
             <input type="submit" value="Cadastrar">
         </form>
-        <a href="home.jsp" class="nav-link">Voltar para Home</a>
     </div>
 </body>
 </html>

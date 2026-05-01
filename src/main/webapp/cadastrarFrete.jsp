@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="br.com.transcarga.persistencia.User" %>
+<%@ page import="br.com.transcarga.persistencia.User, br.com.transcarga.persistencia.UserDAO, java.util.List" %>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -11,14 +11,9 @@
 <body>
     <%
     User user = (User) session.getAttribute("user");
-    boolean isAdmin = (user != null && "admin".equals(user.getRole()));
+    List<User> listaUsers = new UserDAO().listarApenasUsers();
     %>
     <div class="container">
-        <% if (isAdmin) { %>
-        <a href="home.jsp" class="nav-link" style="margin-top:0; margin-bottom:20px; display:inline-block;">← Voltar para Home</a>
-        <% } else { %>
-        <a href="logout" class="nav-link" style="margin-top:0; margin-bottom:20px; display:inline-block;">← Sair (Logout)</a>
-        <% } %>
         <h2>Cadastro de Frete</h2>
         <form method="post" action="FreteServlet">
             <div>
@@ -62,11 +57,18 @@
                 <label for="observacoes">Observações:</label>
                 <textarea id="observacoes" name="observacoes" rows="4" maxlength="500"></textarea>
             </div>
+            <div>
+                <label for="userId">Usuário (opcional):</label>
+                <select id="userId" name="userId" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ddd;">
+                    <option value="">Nenhum (sem associação)</option>
+                    <% for (User u : listaUsers) { %>
+                    <option value="<%= u.getId() %>"><%= u.getUsername() %> (ID: <%= u.getId() %>)</option>
+                    <% } %>
+                </select>
+                <small style="color:#666;">Selecione o usuário para associar ao frete</small>
+            </div>
             <input type="submit" value="Cadastrar Frete">
         </form>
     </div>
-    <footer>
-        © Mossoró, 2025 - TransCarga
-    </footer>
 </body>
 </html>
