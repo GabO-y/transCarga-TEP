@@ -17,6 +17,7 @@ public class UsuarioServlet extends HttpServlet {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String role = request.getParameter("role");
+        String endereco = request.getParameter("endereco");
         boolean isPublico = request.getParameter("publico") != null;
 
         System.out.println("[UsuarioServlet] POST - username: " + username + ", publico: " + isPublico);
@@ -27,8 +28,8 @@ public class UsuarioServlet extends HttpServlet {
         }
 
         // Validações
-        if (username == null || password == null || role == null ||
-            username.trim().isEmpty() || password.trim().isEmpty()) {
+        if (username == null || password == null || role == null || endereco == null ||
+            username.trim().isEmpty() || password.trim().isEmpty() || endereco.trim().isEmpty()) {
             System.out.println("[UsuarioServlet] ERRO: Campos vazios");
             response.sendRedirect("cadastrarUsuario.jsp?erro=campos-vazios");
             return;
@@ -64,7 +65,7 @@ public class UsuarioServlet extends HttpServlet {
             }
 
             // Cadastra usando o método existente no UserDAO (senha é hasheada no construtor do User)
-            dao.cadastrar(username.trim(), password, role);
+            dao.cadastrar(username.trim(), password, role, endereco.trim());
             System.out.println("[UsuarioServlet] Usuário cadastrado com sucesso: " + username + " (role: " + role + ")");
 
             if (isPublico) {

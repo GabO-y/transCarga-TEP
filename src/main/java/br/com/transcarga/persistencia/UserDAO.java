@@ -33,6 +33,10 @@ public class UserDAO {
     }
 
     public void cadastrar(String username, String password, String role) {
+        cadastrar(username, password, role, null);
+    }
+
+    public void cadastrar(String username, String password, String role, String endereco) {
         EntityManager em = getEM();
         EntityTransaction tx = null;
         try {
@@ -40,6 +44,7 @@ public class UserDAO {
             tx.begin();
 
             User user = new User(username, password, role);
+            user.setEndereco(endereco);
             em.persist(user);
 
             tx.commit();
@@ -49,6 +54,27 @@ public class UserDAO {
             }
             e.printStackTrace();
             throw new RuntimeException("Erro ao cadastrar usuário: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+
+    public void atualizarEndereco(Long userId, String endereco) {
+        EntityManager em = getEM();
+        try {
+            em.getTransaction().begin();
+            User user = em.find(User.class, userId);
+            if (user != null) {
+                user.setEndereco(endereco);
+                em.merge(user);
+            }
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Erro ao atualizar endereço: " + e.getMessage(), e);
         } finally {
             em.close();
         }

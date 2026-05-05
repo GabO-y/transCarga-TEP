@@ -42,11 +42,13 @@ public class FreteServlet extends HttpServlet {
 		HttpSession session = request.getSession(false);
 		User userLogado = (session != null) ? (User) session.getAttribute("user") : null;
 
-		// Se for USER, filtra apenas fretes associados a ele
+		// Se for USER, filtra fretes confirmados + solicitações dele
 		if (userLogado != null && "USER".equalsIgnoreCase(userLogado.getRole())) {
-			fretes = dao.listarFretesPorUser(userLogado.getId());
+			fretes = new ArrayList<>();
+			fretes.addAll(dao.listarFretesPorUser(userLogado.getId()));
+			fretes.addAll(dao.listarSolicitacoesPorUser(userLogado.getId()));
 		} else {
-			// ADMIN ou não logado: lista todos
+			// ADMIN ou não logado: lista todos os fretes confirmados
 			fretes = dao.listarFretes();
 		}
 
@@ -223,71 +225,172 @@ public class FreteServlet extends HttpServlet {
 		out.println("</form>");
 		out.println("</div>");
 
+		// Sucesso
+		String sucesso = request.getParameter("sucesso");
+		if ("frete-aceito".equals(sucesso)) {
+			out.println("<div style='background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:4px;margin-bottom:15px;text-align:center;'>Frete aceito! Agora está como Pendente.</div>");
+		}
+
 		// Verifica se há fretes
 		if (fretes.isEmpty()) {
 			out.println("<div class='empty-message'>");
 			out.println("<p>📦 Nenhuma Entrega Encontrada</p>");
 			out.println("</div>");
 		} else {
-			out.println("<div class='table-responsive'>");
-			out.println("<table>");
-			out.println("<thead>"
-					+ "<tr>"
-					+ "<th>ID</th>"
-					+ "<th>Origem</th>"
-					+ "<th>Destino</th>"
-					+ "<th>Peso (kg)</th>"
-					+ "<th>Valor (R$)</th>"
-					+ "<th>Transportadora</th>"
-					+ "<th>Status</th>"
-					+ "<th>Data Frete</th>"
-					+ "<th>Data Entrega</th>"
-					+ "<th>Usuário</th>"
-					+ "<th>Ações</th>"
-					+ "</tr></thead>");
-
+			// Separar solicitações de fretes confirmados
+			List<Frete> solicitacoes = new ArrayList<>();
+			List<Frete> fretesConfirmados = new ArrayList<>();
 			for (Frete f : fretes) {
-				// Tratar valores null ou inválidos
-				String origem = (f.getOrigem() == null || f.getOrigem().trim().isEmpty()) ? "-" : f.getOrigem();
-				String destino = (f.getDestino() == null || f.getDestino().trim().isEmpty()) ? "-" : f.getDestino();
-				String transportadora = (f.getTransportadora() == null || f.getTransportadora().trim().isEmpty()) ? "-" : f.getTransportadora();
-				String statusStr = (f.getStatus() == null || f.getStatus().trim().isEmpty()) ? "-" : f.getStatus();
-				String dataFrete = (f.getDataFrete() == null) ? "-" : f.getDataFrete().toString();
-				String dataEntrega = (f.getDataEntrega() == null) ? "-" : f.getDataEntrega().toString();
+				if ("SOLICITACAO".equals(f.getTipo())) {
+					solicitacoes.add(f);
+				} else {
+					fretesConfirmados.add(f);
+				}
+			}
 
-				// Determinar a classe CSS do status baseado no status original
-				String statusClass = "";
-				if (f.getStatus() != null) {
-					if ("Pendente".equals(f.getStatus())) {
-						statusClass = "status-pendente";
-					} else if ("Em trânsito".equals(f.getStatus())) {
-						statusClass = "status-em-transito";
-					} else if ("Entregue".equals(f.getStatus())) {
-						statusClass = "status-entregue";
+			boolean isUserView = userLogado != null && "USER".equalsIgnoreCase(userLogado.getRole());
+
+			// Renderizar solicitações (apenas para USER)
+			if (isUserView && !solicitacoes.isEmpty()) {
+				List<Frete> aguardandoAdmin = new ArrayList<>();
+				List<Frete> propostaAdmin = new ArrayList<>();
+				List<Frete> rejeitadas = new ArrayList<>();
+				for (Frete f : solicitacoes) {
+					if ("Rejeitado".equals(f.getStatus())) {
+						rejeitadas.add(f);
+					} else if (f.getDataRespostaAdmin() != null) {
+						propostaAdmin.add(f);
+					} else {
+						aguardandoAdmin.add(f);
 					}
 				}
 
-				String userName = (f.getUser() != null && f.getUser().getUsername() != null) ? f.getUser().getUsername() : "-";
+				out.println("<h3 style='color:#2c7cbd; margin:20px 0 10px;'>Minhas Solicitações — Aguardando Admin (" + aguardandoAdmin.size() + ")</h3>");
+				if (aguardandoAdmin.isEmpty()) {
+					out.println("<p style='color:#999; font-style:italic;'>Nenhuma solicitação aguardando resposta.</p>");
+				} else {
+					out.println("<div class='table-responsive'><table>");
+					out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Peso (kg)</th><th>Status</th><th>Ações</th></tr></thead>");
+					out.println("<tbody>");
+					for (Frete f : aguardandoAdmin) {
+						String origem = (f.getOrigem() != null) ? f.getOrigem() : "-";
+						String destino = (f.getDestino() != null) ? f.getDestino() : "-";
+						String statusStr = (f.getStatus() != null) ? f.getStatus() : "Solicitado";
+						String statusClass = "Solicitado".equals(statusStr) ? "status-solicitado" : "status-em-analise";
+						out.println("<tr>");
+						out.println("<td>" + f.getId() + "</td>");
+						out.println("<td>" + origem + "</td>");
+						out.println("<td>" + destino + "</td>");
+						out.printf("<td>%.2f</td>", f.getPeso());
+						out.println("<td><span class='status-badge " + statusClass + "'>" + statusStr + "</span></td>");
+						out.println("<td><a href='" + request.getContextPath() + "/userResposta?id=" + f.getId() + "' style='color:#2c7cbd;'>Ver detalhes</a></td>");
+						out.println("</tr>");
+					}
+					out.println("</tbody></table></div>");
+				}
 
-				// Verifica se é ADMIN para mostrar link de edição
-			HttpSession sessao = request.getSession(false);
-			boolean isAdmin = false;
-			if (sessao != null) {
-				User usuarioLogado = (User) sessao.getAttribute("user");
-				if (usuarioLogado != null && usuarioLogado.getRole() != null) {
-					isAdmin = "ADMIN".equalsIgnoreCase(usuarioLogado.getRole());
+				out.println("<h3 style='color:#ff9800; margin:20px 0 10px;'>Proposta do Admin (" + propostaAdmin.size() + ")</h3>");
+				if (propostaAdmin.isEmpty()) {
+					out.println("<p style='color:#999; font-style:italic;'>Nenhuma proposta do admin.</p>");
+				} else {
+					out.println("<div class='table-responsive'><table>");
+					out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Transportadora</th><th>Valor (R$)</th><th>Status</th><th>Ações</th></tr></thead>");
+					out.println("<tbody>");
+					for (Frete f : propostaAdmin) {
+						String origem = (f.getOrigem() != null) ? f.getOrigem() : "-";
+						String destino = (f.getDestino() != null) ? f.getDestino() : "-";
+						String transportadora = (f.getTransportadora() != null) ? f.getTransportadora() : "-";
+						String statusStr = (f.getStatus() != null) ? f.getStatus() : "Em análise";
+						String statusClass = "status-em-analise";
+						out.println("<tr>");
+						out.println("<td>" + f.getId() + "</td>");
+						out.println("<td>" + origem + "</td>");
+						out.println("<td>" + destino + "</td>");
+						out.println("<td>" + transportadora + "</td>");
+						out.printf("<td class='valor-cell'>R$ %.2f</td>", f.getValor());
+						out.println("<td><span class='status-badge " + statusClass + "'>" + statusStr + "</span></td>");
+						out.println("<td><a href='" + request.getContextPath() + "/userResposta?id=" + f.getId() + "' style='color:#2c7cbd;'>Ver detalhes</a></td>");
+						out.println("</tr>");
+					}
+					out.println("</tbody></table></div>");
+				}
+
+				out.println("<h3 style='color:#c0392b; margin:20px 0 10px;'>Rejeitadas pelo Admin (" + rejeitadas.size() + ")</h3>");
+				if (rejeitadas.isEmpty()) {
+					out.println("<p style='color:#999; font-style:italic;'>Nenhuma solicitação rejeitada.</p>");
+				} else {
+					out.println("<div class='table-responsive'><table>");
+					out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Motivo</th><th>Ações</th></tr></thead>");
+					out.println("<tbody>");
+					for (Frete f : rejeitadas) {
+						String origem = (f.getOrigem() != null) ? f.getOrigem() : "-";
+						String destino = (f.getDestino() != null) ? f.getDestino() : "-";
+						String motivo = f.getMotivoRejeicao() != null ? f.getMotivoRejeicao() : "-";
+						out.println("<tr>");
+						out.println("<td>" + f.getId() + "</td>");
+						out.println("<td>" + origem + "</td>");
+						out.println("<td>" + destino + "</td>");
+						out.println("<td style='max-width:200px; overflow:hidden; text-overflow:ellipsis;'>" + motivo + "</td>");
+						out.println("<td><a href='" + request.getContextPath() + "/userResposta?id=" + f.getId() + "' style='color:#2c7cbd;'>Ver detalhes</a></td>");
+						out.println("</tr>");
+					}
+					out.println("</tbody></table></div>");
 				}
 			}
 
-			String acoes = isAdmin ? "<a href='" + request.getContextPath() + "/EditarFreteServlet?id=" + f.getId() + "' title='Editar'>✎ Editar</a>" : "-";
+			if (!fretesConfirmados.isEmpty()) {
+				if (isUserView && !solicitacoes.isEmpty()) {
+					out.println("<h3 style='margin:20px 0 10px;'>Fretes Confirmados</h3>");
+				}
+				out.println("<div class='table-responsive'>");
+				out.println("<table>");
+				out.println("<thead>"
+						+ "<tr>"
+						+ "<th>ID</th>"
+						+ "<th>Origem</th>"
+						+ "<th>Destino</th>"
+						+ "<th>Peso (kg)</th>"
+						+ "<th>Valor (R$)</th>"
+						+ "<th>Transportadora</th>"
+						+ "<th>Status</th>"
+						+ "<th>Data Frete</th>"
+						+ "<th>Data Entrega</th>"
+						+ "<th>Usuário</th>"
+						+ "<th>Ações</th>"
+						+ "</tr></thead>");
+				out.println("<tbody>");
 
-			out.printf(
-						"<tr><td>%d</td><td>%s</td><td>%s</td><td>%.2f</td><td class='valor-cell'>R$ %.2f</td><td>%s</td><td class='status-badge %s'>%s</td><td class='data-cell'>%s</td><td class='data-cell'>%s</td><td>%s</td><td>%s</td></tr>",
-						f.getId(), origem, destino, f.getPeso(), f.getValor(), transportadora,
-						statusClass, statusStr, dataFrete, dataEntrega, userName, acoes);
+				for (Frete f : fretesConfirmados) {
+					String origem = (f.getOrigem() == null || f.getOrigem().trim().isEmpty()) ? "-" : f.getOrigem();
+					String destino = (f.getDestino() == null || f.getDestino().trim().isEmpty()) ? "-" : f.getDestino();
+					String transportadora = (f.getTransportadora() == null || f.getTransportadora().trim().isEmpty()) ? "-" : f.getTransportadora();
+					String statusStr = (f.getStatus() == null || f.getStatus().trim().isEmpty()) ? "-" : f.getStatus();
+					String dataFrete = (f.getDataFrete() == null) ? "-" : f.getDataFrete().toString();
+					String dataEntrega = (f.getDataEntrega() == null) ? "-" : f.getDataEntrega().toString();
+
+					String statusClass = "";
+					if (f.getStatus() != null) {
+						if ("Pendente".equals(f.getStatus())) statusClass = "status-pendente";
+						else if ("Em trânsito".equals(f.getStatus())) statusClass = "status-em-transito";
+						else if ("Entregue".equals(f.getStatus())) statusClass = "status-entregue";
+					}
+
+					String userName = (f.getUser() != null && f.getUser().getUsername() != null) ? f.getUser().getUsername() : "-";
+
+					boolean isAdmin = userLogado != null && "ADMIN".equalsIgnoreCase(userLogado.getRole());
+					String acoes = isAdmin ? "<a href='" + request.getContextPath() + "/EditarFreteServlet?id=" + f.getId() + "' title='Editar'>✎ Editar</a>" : "-";
+
+					out.printf(
+								"<tr><td>%d</td><td>%s</td><td>%s</td><td>%.2f</td><td class='valor-cell'>R$ %.2f</td><td>%s</td><td class='status-badge %s'>%s</td><td class='data-cell'>%s</td><td class='data-cell'>%s</td><td>%s</td><td>%s</td></tr>",
+								f.getId(), origem, destino, f.getPeso(), f.getValor(), transportadora,
+								statusClass, statusStr, dataFrete, dataEntrega, userName, acoes);
+				}
+				out.println("</tbody></table></div>");
+			} else if (solicitacoes.isEmpty()) {
+				out.println("<div class='empty-message'>");
+				out.println("<p>📦 Nenhuma Entrega Encontrada</p>");
+				out.println("</div>");
 			}
-			out.println("</tbody></table>");
-			out.println("</div>");
 		}
 		out.println("</body></html>");
 	}

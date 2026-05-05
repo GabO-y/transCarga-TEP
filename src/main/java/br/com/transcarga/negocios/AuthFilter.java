@@ -41,8 +41,10 @@ public class AuthFilter implements Filter {
         String role = usuario.getRole();
 
         if ("USER".equals(role)) {
-            // USER só pode acessar home.jsp, listar fretes e FreteServlet
-            if (uri.endsWith("home.jsp") || uri.contains("listarFretes") || uri.contains("FreteServlet")) {
+            // USER pode acessar: home, listar fretes, solicitar frete, editar solicitação, responder, minhas solicitações
+            if (uri.endsWith("home.jsp") || uri.contains("listarFretes") || uri.contains("FreteServlet")
+                    || uri.contains("solicitarFrete") || uri.contains("editarSolicitacao") || uri.contains("userResposta")
+                    || uri.contains("minhasSolicitacoes")) {
                 chain.doFilter(request, response);
             } else {
                 resp.sendRedirect(contextPath + "/home.jsp");

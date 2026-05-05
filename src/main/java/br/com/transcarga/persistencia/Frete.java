@@ -2,6 +2,7 @@ package br.com.transcarga.persistencia;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 public class Frete {
@@ -19,6 +20,13 @@ public class Frete {
     private LocalDate dataFrete;
     private LocalDate dataEntrega;
     private String observacoes;
+
+    // Campos para fluxo de solicitação
+    // "SOLICITACAO" = criado pelo user, "CONFIRMADO" = aceito mutuamente, "CANCELADO" = cancelado
+    private String tipo;
+    private String motivoRejeicao;
+    private LocalDateTime dataRespostaAdmin;
+    private boolean encerradoDispensado;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -102,6 +110,38 @@ public class Frete {
 
     public void setObservacoes(String observacoes) {
         this.observacoes = observacoes;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public String getMotivoRejeicao() {
+        return motivoRejeicao;
+    }
+
+    public void setMotivoRejeicao(String motivoRejeicao) {
+        this.motivoRejeicao = motivoRejeicao;
+    }
+
+    public LocalDateTime getDataRespostaAdmin() {
+        return dataRespostaAdmin;
+    }
+
+    public void setDataRespostaAdmin(LocalDateTime dataRespostaAdmin) {
+        this.dataRespostaAdmin = dataRespostaAdmin;
+    }
+
+    public boolean isEncerradoDispensado() {
+        return encerradoDispensado;
+    }
+
+    public void setEncerradoDispensado(boolean encerradoDispensado) {
+        this.encerradoDispensado = encerradoDispensado;
     }
 
     public User getUser() {

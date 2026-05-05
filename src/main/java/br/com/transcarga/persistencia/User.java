@@ -20,6 +20,8 @@ public class User {
     @Column(nullable = false)
     private String role;
 
+    private String endereco;
+
     public User() {
     }
 
@@ -61,6 +63,14 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(String endereco) {
+        this.endereco = endereco;
     }
 
     public static String hashPassword(String plainTextPassword) {

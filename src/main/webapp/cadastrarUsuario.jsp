@@ -49,6 +49,10 @@
                 <label for="password">Senha:</label>
                 <input type="password" id="password" name="password" required minlength="6">
             </div>
+            <div>
+                <label for="endereco">Endereço:</label>
+                <input type="text" id="endereco" name="endereco" maxlength="200" placeholder="Rua, número, bairro - Cidade/UF" required>
+            </div>
 <%
                 if (isPublico) {
 %>

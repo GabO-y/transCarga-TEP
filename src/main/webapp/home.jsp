@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="br.com.transcarga.persistencia.User" %>
+<%@ page import="br.com.transcarga.persistencia.User, br.com.transcarga.persistencia.FreteDAO" %>
 <%
     User user = (User) session.getAttribute("user");
     if (user == null) {
@@ -7,6 +7,12 @@
         return;
     }
     boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole());
+    long qtdSolicitacoesPendentes = 0;
+    if (isAdmin) {
+        try {
+            qtdSolicitacoesPendentes = new FreteDAO().contarSolicitacoesPendentes();
+        } catch (Exception e) {}
+    }
 %>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -148,8 +154,16 @@
         <nav class="sidebar-nav">
             <ul>
                 <li><a href="#" onclick="loadPage('FreteServlet', this); return false;" class="active">Listar Fretes</a></li>
+                <% if (!isAdmin) { %>
+                <li><a href="#" onclick="loadPage('solicitarFrete', this); return false;">Solicitar Frete</a></li>
+                <% } %>
                 <% if (isAdmin) { %>
                 <li><a href="#" onclick="loadPage('cadastrarFrete.jsp', this); return false;">Cadastrar Frete</a></li>
+                <li><a href="#" onclick="loadPage('SolicitacaoServlet', this); return false;">Solicitações
+                    <% if (qtdSolicitacoesPendentes > 0) { %>
+                        <span style="background:#e74c3c;color:white;font-size:0.7em;padding:2px 7px;border-radius:10px;margin-left:5px;"><%= qtdSolicitacoesPendentes %></span>
+                    <% } %>
+                </a></li>
                 <li><a href="#" onclick="loadPage('listarUsuarios.jsp', this); return false;">Listar Usuários</a></li>
                 <li><a href="#" onclick="loadPage('cadastrarUsuario.jsp', this); return false;">Cadastrar Usuário</a></li>
                 <% } %>
