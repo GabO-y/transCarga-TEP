@@ -1,14 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="br.com.transcarga.persistencia.User" %>
 <%
-    User usuario = (User) session.getAttribute("user");
-    if (usuario == null) {
-        response.sendRedirect("login.jsp");
-        return;
-    }
-    if (!"ADMIN".equals(usuario.getRole())) {
-        response.sendRedirect("home.jsp");
-        return;
+    // Se nao tem parametro "publico", exige admin
+    if (request.getParameter("publico") == null) {
+        User usuario = (User) session.getAttribute("user");
+        if (usuario == null) {
+            response.sendRedirect("login.jsp");
+            return;
+        }
+        if (!"ADMIN".equals(usuario.getRole())) {
+            response.sendRedirect("home.jsp");
+            return;
+        }
     }
 %>
 <!DOCTYPE html>
@@ -30,6 +33,14 @@
         <% } %>
 
         <form method="post" action="usuario">
+<%
+            boolean isPublico = "true".equals(request.getParameter("publico"));
+            if (isPublico) {
+%>
+            <input type="hidden" name="publico" value="true">
+<%
+            }
+%>
             <div>
                 <label for="username">Usuário:</label>
                 <input type="text" id="username" name="username" required>
@@ -38,6 +49,13 @@
                 <label for="password">Senha:</label>
                 <input type="password" id="password" name="password" required minlength="6">
             </div>
+<%
+                if (isPublico) {
+%>
+            <input type="hidden" name="role" value="USER">
+<%
+                } else {
+%>
             <div>
                 <label for="role">Papel:</label>
                 <select id="role" name="role" required>
@@ -46,8 +64,20 @@
                     <option value="ADMIN">ADMIN</option>
                 </select>
             </div>
+<%
+                }
+%>
             <input type="submit" value="Cadastrar">
         </form>
+<%
+            if (isPublico) {
+%>
+        <a href="login.jsp" style="display:block; text-align:center; margin-top:15px; color:#2c7cbd; text-decoration:none;">
+            Voltar para o login
+        </a>
+<%
+            }
+%>
     </div>
 </body>
 </html>

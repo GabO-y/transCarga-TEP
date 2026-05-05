@@ -44,10 +44,11 @@ public class UserDAO {
 
             tx.commit();
         } catch (Exception e) {
-            e.printStackTrace();
             if (tx != null && tx.isActive()) {
                 tx.rollback();
             }
+            e.printStackTrace();
+            throw new RuntimeException("Erro ao cadastrar usuário: " + e.getMessage(), e);
         } finally {
             em.close();
         }
@@ -74,6 +75,20 @@ public class UserDAO {
         try {
             return em.createQuery("SELECT u FROM User u WHERE u.role = 'USER'", User.class)
                      .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public User buscarPorUsername(String username) {
+        EntityManager em = getEM();
+        try {
+            return em.createQuery(
+                        "SELECT u FROM User u WHERE u.username = :username", User.class)
+                        .setParameter("username", username)
+                        .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
         } finally {
             em.close();
         }

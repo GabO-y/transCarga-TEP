@@ -23,7 +23,8 @@ public class AuthFilter implements Filter {
         if (uri.endsWith("login") || uri.endsWith("login.jsp") || uri.endsWith("cadastrarUsuario.jsp")
                 || uri.endsWith("/logout") || uri.endsWith("logout")
                 || uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".png") || uri.endsWith(".jpg")
-                || uri.contains("gerar-hash")) {
+                || uri.contains("gerar-hash")
+                || uri.endsWith("usuario")) {
             chain.doFilter(request, response);
             return;
         }

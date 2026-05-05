@@ -13,6 +13,9 @@
         <% if (request.getParameter("error") != null) { %>
             <div class="error-message">Usuário ou senha inválidos!</div>
         <% } %>
+        <% if ("cadastrado".equals(request.getParameter("sucesso"))) { %>
+            <div style="background:#e8f5e9; color:#2e7d32; padding:10px; border-radius:4px; margin-bottom:15px; text-align:center;">Cadastro realizado com sucesso! Faça login.</div>
+        <% } %>
         <form method="post" action="login">
             <div>
                 <label for="username">Usuário:</label>
@@ -24,6 +27,7 @@
             </div>
             <input type="submit" value="Entrar">
         </form>
+        <a href="cadastrarUsuario.jsp?publico=true" style="display:block; text-align:center; margin-top:15px; color:#2c7cbd; text-decoration:none;">Cadastrar-se</a>
     </div>
 </body>
 </html>
