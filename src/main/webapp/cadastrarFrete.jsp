@@ -5,31 +5,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastrar Frete - TransCarga</title>
+    <title>Ofertar Frete - TransCarga</title>
     <link rel="stylesheet" href="style.css">
-    <script>
-        function atualizarDataEntrega() {
-            var status = document.getElementById('status').value;
-            var dataEntrega = document.getElementById('dataEntrega');
-            if (status === 'Entregue') {
-                dataEntrega.required = true;
-                dataEntrega.disabled = false;
-            } else {
-                dataEntrega.required = false;
-                dataEntrega.value = '';
-                dataEntrega.disabled = true;
-            }
-        }
-        window.onload = atualizarDataEntrega;
-    </script>
 </head>
 <body>
     <%
     User user = (User) session.getAttribute("user");
     List<User> listaUsers = new UserDAO().listarApenasUsers();
     %>
-    <div class="container">
-        <h2>Cadastro de Frete</h2>
+    <div class="container" style="max-width: 500px;">
+        <h2>Ofertar Frete para Usuário</h2>
+
+        <div style="background:#e3f2fd; padding:12px; border-radius:6px; margin-bottom:15px; border-left:4px solid #2196f3;">
+            <p style="margin:0; font-size:0.9em; color:#1565c0;">O frete será enviado como <strong>oferta</strong> para o usuário selecionado. Após o aceite dele, o frete será confirmado automaticamente.</p>
+        </div>
+
+        <% if ("sucesso".equals(request.getParameter("sucesso"))) { %>
+            <div style="background:#e8f5e9; color:#2e7d32; padding:10px; border-radius:4px; margin-bottom:15px; text-align:center;">Oferta enviada com sucesso! Aguardando aceite do usuário.</div>
+        <% } %>
+
         <form method="post" action="FreteServlet">
             <div>
                 <label for="origem">Origem:</label>
@@ -52,37 +46,23 @@
                 <input type="number" id="valor" name="valor" step="0.01" min="0.01" required>
             </div>
             <div>
-                <label for="status">Status:</label>
-                <select id="status" name="status" required onchange="atualizarDataEntrega()">
-                    <option value="">Selecione o status</option>
-                    <option value="Pendente">Pendente</option>
-                    <option value="Em trânsito">Em trânsito</option>
-                    <option value="Entregue">Entregue</option>
-                </select>
-            </div>
-            <div>
                 <label for="dataFrete">Data do Frete:</label>
                 <input type="date" id="dataFrete" name="dataFrete" required>
             </div>
             <div>
-                <label for="dataEntrega">Data de Entrega:</label>
-                <input type="date" id="dataEntrega" name="dataEntrega" required>
-            </div>
-            <div>
                 <label for="observacoes">Observações:</label>
-                <textarea id="observacoes" name="observacoes" rows="4" maxlength="500"></textarea>
+                <textarea id="observacoes" name="observacoes" rows="3" maxlength="500"></textarea>
             </div>
             <div>
-                <label for="userId">Usuário (opcional):</label>
-                <select id="userId" name="userId" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ddd;">
-                    <option value="">Nenhum (sem associação)</option>
+                <label for="userId">Usuário <span style="color:#c0392b;">*</span>:</label>
+                <select id="userId" name="userId" required>
+                    <option value="">Selecione o usuário...</option>
                     <% for (User u : listaUsers) { %>
                     <option value="<%= u.getId() %>"><%= u.getUsername() %> (ID: <%= u.getId() %>)</option>
                     <% } %>
                 </select>
-                <small style="color:#666;">Selecione o usuário para associar ao frete</small>
             </div>
-            <input type="submit" value="Cadastrar Frete">
+            <input type="submit" value="Enviar Oferta">
         </form>
     </div>
 </body>

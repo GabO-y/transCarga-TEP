@@ -69,7 +69,7 @@ public class FreteDAO {
         try {
             if (userId != null) {
                 return em.createQuery(
-                        "SELECT f FROM Frete f WHERE f.user.id = :userId AND (f.tipo IS NULL OR f.tipo = 'CONFIRMADO')",
+                        "SELECT f FROM Frete f WHERE (f.tipo IS NULL OR f.tipo = 'CONFIRMADO') AND f.user.id = :userId",
                         Frete.class)
                         .setParameter("userId", userId)
                         .getResultList();
@@ -118,7 +118,7 @@ public class FreteDAO {
         try {
             if (userId != null) {
                 return em.createQuery(
-                        "SELECT f FROM Frete f WHERE f.tipo = 'SOLICITACAO' AND f.user.id = :userId ORDER BY f.id DESC",
+                        "SELECT f FROM Frete f WHERE (f.origemCriacao IS NULL OR f.origemCriacao = 'USER') AND f.tipo = 'SOLICITACAO' AND f.user.id = :userId ORDER BY f.id DESC",
                         Frete.class)
                         .setParameter("userId", userId)
                         .getResultList();
@@ -211,7 +211,7 @@ public class FreteDAO {
         }
     }
 
-    public void encerrarSolicitacao(Long id) {
+    public void encerrarSolicitacao(Long id, String motivo) {
         EntityManager em = getEM();
         try {
             em.getTransaction().begin();
@@ -219,6 +219,7 @@ public class FreteDAO {
             if (f != null) {
                 f.setTipo("ENCERRADO");
                 f.setStatus("Encerrado");
+                f.setMotivoRejeicao(motivo != null ? motivo.trim() : "");
                 f.setDataRespostaAdmin(java.time.LocalDateTime.now());
                 em.merge(f);
             }
@@ -286,6 +287,47 @@ public class FreteDAO {
             }
             e.printStackTrace();
             throw new RuntimeException("Erro ao cancelar solicitação: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<Frete> listarOfertasAdmin() {
+        EntityManager em = getEM();
+        try {
+            return em.createQuery(
+                    "SELECT f FROM Frete f WHERE f.tipo = 'SOLICITACAO' AND f.origemCriacao = 'ADMIN' ORDER BY f.id DESC",
+                    Frete.class).getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of();
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<Frete> listarOfertasAdminPorUser(Long userId) {
+        EntityManager em = getEM();
+        try {
+            if (userId != null) {
+                return em.createQuery(
+                        "SELECT f FROM Frete f WHERE f.tipo = 'SOLICITACAO' AND f.origemCriacao = 'ADMIN' AND f.user.id = :userId ORDER BY f.id DESC",
+                        Frete.class)
+                        .setParameter("userId", userId)
+                        .getResultList();
+            }
+            return List.of();
+        } finally {
+            em.close();
+        }
+    }
+
+    public long contarOfertasPendentes() {
+        EntityManager em = getEM();
+        try {
+            return em.createQuery(
+                    "SELECT COUNT(f) FROM Frete f WHERE f.tipo = 'SOLICITACAO' AND f.origemCriacao = 'ADMIN' AND f.dataRespostaAdmin IS NULL",
+                    Long.class).getSingleResult();
         } finally {
             em.close();
         }

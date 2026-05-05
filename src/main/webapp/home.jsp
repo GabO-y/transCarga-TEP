@@ -8,9 +8,11 @@
     }
     boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole());
     long qtdSolicitacoesPendentes = 0;
+    long qtdOfertasPendentes = 0;
     if (isAdmin) {
         try {
             qtdSolicitacoesPendentes = new FreteDAO().contarSolicitacoesPendentes();
+            qtdOfertasPendentes = new FreteDAO().contarOfertasPendentes();
         } catch (Exception e) {}
     }
 %>
@@ -162,6 +164,9 @@
                 <li><a href="#" onclick="loadPage('SolicitacaoServlet', this); return false;">Solicitações
                     <% if (qtdSolicitacoesPendentes > 0) { %>
                         <span style="background:#e74c3c;color:white;font-size:0.7em;padding:2px 7px;border-radius:10px;margin-left:5px;"><%= qtdSolicitacoesPendentes %></span>
+                    <% } %>
+                    <% if (qtdOfertasPendentes > 0) { %>
+                        <span style="background:#2196f3;color:white;font-size:0.7em;padding:2px 7px;border-radius:10px;margin-left:5px;"><%= qtdOfertasPendentes %></span>
                     <% } %>
                 </a></li>
                 <li><a href="#" onclick="loadPage('listarUsuarios.jsp', this); return false;">Listar Usuários</a></li>

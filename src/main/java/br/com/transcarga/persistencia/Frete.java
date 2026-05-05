@@ -27,6 +27,7 @@ public class Frete {
     private String motivoRejeicao;
     private LocalDateTime dataRespostaAdmin;
     private boolean encerradoDispensado;
+    private String origemCriacao;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -150,5 +151,13 @@ public class Frete {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public String getOrigemCriacao() {
+        return origemCriacao;
+    }
+
+    public void setOrigemCriacao(String origemCriacao) {
+        this.origemCriacao = origemCriacao;
     }
 }

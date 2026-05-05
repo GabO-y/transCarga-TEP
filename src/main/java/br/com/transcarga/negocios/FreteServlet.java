@@ -42,79 +42,65 @@ public class FreteServlet extends HttpServlet {
 		HttpSession session = request.getSession(false);
 		User userLogado = (session != null) ? (User) session.getAttribute("user") : null;
 
-		// Se for USER, filtra fretes confirmados + solicitações dele
-		if (userLogado != null && "USER".equalsIgnoreCase(userLogado.getRole())) {
+		boolean isAdmin = userLogado != null && "ADMIN".equalsIgnoreCase(userLogado.getRole());
+		boolean isUser = userLogado != null && "USER".equalsIgnoreCase(userLogado.getRole());
+
+		if (isUser) {
 			fretes = new ArrayList<>();
 			fretes.addAll(dao.listarFretesPorUser(userLogado.getId()));
 			fretes.addAll(dao.listarSolicitacoesPorUser(userLogado.getId()));
 		} else {
-			// ADMIN ou não logado: lista todos os fretes confirmados
 			fretes = dao.listarFretes();
 		}
 
-		// Filtros
 		String filtroStatus = request.getParameter("filtroStatus");
-		System.out.println("[FILTRO] Status recebido: " + filtroStatus);
 		if (filtroStatus != null && !filtroStatus.isEmpty()) {
 			fretes = fretes.stream()
 					.filter(f -> f.getStatus() != null && f.getStatus().equals(filtroStatus))
 					.collect(Collectors.toList());
-			System.out.println("[FILTRO] Após filtro status: " + fretes.size() + " fretes");
 		}
 
 		String filtroTransportadora = request.getParameter("filtroTransportadora");
-		System.out.println("[FILTRO] Transportadora recebida: " + filtroTransportadora);
 		if (filtroTransportadora != null && !filtroTransportadora.isEmpty()) {
 			fretes = fretes.stream()
 					.filter(f -> f.getTransportadora() != null
 							&& f.getTransportadora().toLowerCase().contains(filtroTransportadora.toLowerCase()))
 					.collect(Collectors.toList());
-			System.out.println("[FILTRO] Após filtro transportadora: " + fretes.size() + " fretes");
 		}
 
 		String filtroOrigem = request.getParameter("filtroOrigem");
-		System.out.println("[FILTRO] Origem recebida: " + filtroOrigem);
 		if (filtroOrigem != null && !filtroOrigem.isEmpty()) {
 			fretes = fretes.stream()
 					.filter(f -> f.getOrigem() != null
 							&& f.getOrigem().toLowerCase().contains(filtroOrigem.toLowerCase()))
 					.collect(Collectors.toList());
-			System.out.println("[FILTRO] Após filtro origem: " + fretes.size() + " fretes");
 		}
 
 		String filtroDestino = request.getParameter("filtroDestino");
-		System.out.println("[FILTRO] Destino recebido: " + filtroDestino);
 		if (filtroDestino != null && !filtroDestino.isEmpty()) {
 			fretes = fretes.stream()
 					.filter(f -> f.getDestino() != null
 							&& f.getDestino().toLowerCase().contains(filtroDestino.toLowerCase()))
 					.collect(Collectors.toList());
-			System.out.println("[FILTRO] Após filtro destino: " + fretes.size() + " fretes");
 		}
 
 		String filtroPesoMin = request.getParameter("filtroPesoMin");
-		System.out.println("[FILTRO] PesoMin recebido: " + filtroPesoMin);
 		if (filtroPesoMin != null && !filtroPesoMin.isEmpty()) {
 			try {
 				double min = Double.parseDouble(filtroPesoMin);
-				System.out.println("[FILTRO] Aplicando peso min: " + min);
 				fretes = fretes.stream()
 						.filter(f -> f.getPeso() >= min)
 						.collect(Collectors.toList());
-				System.out.println("[FILTRO] Após filtro peso min: " + fretes.size() + " fretes");
 			} catch (NumberFormatException e) {}
 		}
 
 		String filtroPesoMax = request.getParameter("filtroPesoMax");
-		System.out.println("[FILTRO] PesoMax recebido: " + filtroPesoMax);
 		if (filtroPesoMax != null && !filtroPesoMax.isEmpty()) {
 			try {
 				double max = Double.parseDouble(filtroPesoMax);
-				System.out.println("[FILTRO] Aplicando peso max: " + max);
 				fretes = fretes.stream()
 						.filter(f -> f.getPeso() <= max)
 						.collect(Collectors.toList());
-				System.out.println("[FILTRO] Após filtro peso max: " + fretes.size() + " fretes");
 			} catch (NumberFormatException e) {}
 		}
 
@@ -129,11 +115,9 @@ public class FreteServlet extends HttpServlet {
 		}
 
 		String filtroValorMax = request.getParameter("filtroValorMax");
-		System.out.println("[FILTRO] filtroValorMax recebido: " + filtroValorMax);
 		if (filtroValorMax != null && !filtroValorMax.isEmpty()) {
 			try {
 				double max = Double.parseDouble(filtroValorMax);
-				System.out.println("[FILTRO] Aplicando filtro valor max: " + max);
 				fretes = fretes.stream()
 						.filter(f -> f.getValor() <= max)
 						.collect(Collectors.toList());
@@ -141,48 +125,34 @@ public class FreteServlet extends HttpServlet {
 		}
 
 		String filtroDataInicio = request.getParameter("filtroDataInicio");
-		System.out.println("[FILTRO] filtroDataInicio recebido: '" + filtroDataInicio + "'");
 		if (filtroDataInicio != null && !filtroDataInicio.isEmpty()) {
 			try {
 				LocalDate inicio = LocalDate.parse(filtroDataInicio);
-				System.out.println("[FILTRO] Data início parseada: " + inicio);
 				fretes = fretes.stream()
 						.filter(f -> f.getDataFrete() != null && !f.getDataFrete().isBefore(inicio))
 						.collect(Collectors.toList());
-				System.out.println("[FILTRO] Após filtro data início (dataFrete >=): " + fretes.size() + " fretes");
-			} catch (Exception e) {
-				System.out.println("[FILTRO] Erro ao parsear data início: " + filtroDataInicio + " - " + e.getMessage());
-			}
+			} catch (Exception e) {}
 		}
 
 		String filtroDataFim = request.getParameter("filtroDataFim");
-		System.out.println("[FILTRO] filtroDataFim recebido: '" + filtroDataFim + "'");
 		if (filtroDataFim != null && !filtroDataFim.isEmpty()) {
 			try {
 				LocalDate fim = LocalDate.parse(filtroDataFim);
-				System.out.println("[FILTRO] Data fim parseada: " + fim);
-				// Filtra por dataEntrega (data de entrega) <= fim
 				fretes = fretes.stream()
 						.filter(f -> f.getDataEntrega() != null && !f.getDataEntrega().isAfter(fim))
 						.collect(Collectors.toList());
-				System.out.println("[FILTRO] Após filtro data fim (dataEntrega <=): " + fretes.size() + " fretes");
-			} catch (Exception e) {
-				System.out.println("[FILTRO] Erro ao parsear data fim: " + filtroDataFim + " - " + e.getMessage());
-			}
+			} catch (Exception e) {}
 		}
 
 		String filtroUserId = request.getParameter("filtroUserId");
 
-		// Filtro por usuário (apenas admin)
-		if (userLogado != null && "ADMIN".equalsIgnoreCase(userLogado.getRole())) {
-			if (filtroUserId != null && !filtroUserId.isEmpty()) {
-				try {
-					Long userIdFiltro = Long.parseLong(filtroUserId);
-					fretes = fretes.stream()
-							.filter(f -> f.getUser() != null && f.getUser().getId().equals(userIdFiltro))
-							.collect(Collectors.toList());
-				} catch (NumberFormatException e) {}
-			}
+		if (isAdmin && filtroUserId != null && !filtroUserId.isEmpty()) {
+			try {
+				Long userIdFiltro = Long.parseLong(filtroUserId);
+				fretes = fretes.stream()
+						.filter(f -> f.getUser() != null && f.getUser().getId().equals(userIdFiltro))
+						.collect(Collectors.toList());
+			} catch (NumberFormatException e) {}
 		}
 
 		request.setCharacterEncoding("UTF-8");
@@ -196,7 +166,6 @@ public class FreteServlet extends HttpServlet {
 		out.println("<link rel='stylesheet' href='" + request.getContextPath() + "/style.css'>");
 		out.println("</head><body style='background: white; padding: 20px;'>");
 
-		// Formulário de filtro
 		out.println("<div class='filtro-container'>");
 		out.println("<form method='get' action='" + request.getContextPath() + "/FreteServlet' style='display:block !important; margin-bottom:15px;'>");
 		out.println("<select name='filtroStatus' style='display:inline-block !important; width:auto !important; padding:8px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin:2px;'>");
@@ -215,8 +184,7 @@ public class FreteServlet extends HttpServlet {
 		out.println("<span style='display:inline-block !important; margin:2px; font-size:0.8em; color:#666;'>Dt.Início</span><input type='date' name='filtroDataInicio' value='" + (filtroDataInicio != null ? filtroDataInicio : "") + "' style='display:inline-block !important; width:140px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin-left:2px;'>");
 		out.println("<span style='display:inline-block !important; margin:2px; font-size:0.8em; color:#666;'>Dt.Fim</span><input type='date' name='filtroDataFim' value='" + (filtroDataFim != null ? filtroDataFim : "") + "' style='display:inline-block !important; width:140px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin-left:2px;'>");
 
-		// Filtro por usuário (apenas admin)
-		if (userLogado != null && "ADMIN".equalsIgnoreCase(userLogado.getRole())) {
+		if (isAdmin) {
 			out.println("<input type='number' name='filtroUserId' placeholder='ID Usuário' value='" + (filtroUserId != null ? filtroUserId : "") + "' style='display:inline-block !important; width:90px !important; padding:8px 8px; border:1px solid #ddd; border-radius:4px; font-size:0.9em; margin:2px;'>");
 		}
 
@@ -225,173 +193,178 @@ public class FreteServlet extends HttpServlet {
 		out.println("</form>");
 		out.println("</div>");
 
-		// Sucesso
 		String sucesso = request.getParameter("sucesso");
 		if ("frete-aceito".equals(sucesso)) {
 			out.println("<div style='background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:4px;margin-bottom:15px;text-align:center;'>Frete aceito! Agora está como Pendente.</div>");
+		} else if ("oferta-enviada".equals(sucesso)) {
+			out.println("<div style='background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:4px;margin-bottom:15px;text-align:center;'>Oferta enviada com sucesso! Aguardando aceite do usuário.</div>");
 		}
 
-		// Verifica se há fretes
-		if (fretes.isEmpty()) {
-			out.println("<div class='empty-message'>");
-			out.println("<p>📦 Nenhuma Entrega Encontrada</p>");
-			out.println("</div>");
-		} else {
-			// Separar solicitações de fretes confirmados
-			List<Frete> solicitacoes = new ArrayList<>();
-			List<Frete> fretesConfirmados = new ArrayList<>();
-			for (Frete f : fretes) {
-				if ("SOLICITACAO".equals(f.getTipo())) {
-					solicitacoes.add(f);
+		if (isUser) {
+			List<Frete> ofertasAdmin = dao.listarOfertasAdminPorUser(userLogado.getId());
+			List<Frete> ofertasAtivas = new ArrayList<>();
+			List<Frete> ofertasAceitas = new ArrayList<>();
+			List<Frete> ofertasRejeitadas = new ArrayList<>();
+			for (Frete f : ofertasAdmin) {
+				if ("CONFIRMADO".equals(f.getTipo())) {
+					ofertasAceitas.add(f);
+				} else if ("ENCERRADO".equals(f.getTipo())) {
+					ofertasRejeitadas.add(f);
 				} else {
-					fretesConfirmados.add(f);
+					ofertasAtivas.add(f);
 				}
 			}
 
-			boolean isUserView = userLogado != null && "USER".equalsIgnoreCase(userLogado.getRole());
+			List<Frete> solicitacoesUser = dao.listarSolicitacoesPorUser(userLogado.getId());
 
-			// Renderizar solicitações (apenas para USER)
-			if (isUserView && !solicitacoes.isEmpty()) {
-				List<Frete> aguardandoAdmin = new ArrayList<>();
-				List<Frete> propostaAdmin = new ArrayList<>();
-				List<Frete> rejeitadas = new ArrayList<>();
-				for (Frete f : solicitacoes) {
-					if ("Rejeitado".equals(f.getStatus())) {
-						rejeitadas.add(f);
-					} else if (f.getDataRespostaAdmin() != null) {
-						propostaAdmin.add(f);
-					} else {
-						aguardandoAdmin.add(f);
-					}
-				}
+			boolean temConteudo = !ofertasAtivas.isEmpty() || !ofertasAceitas.isEmpty() || !ofertasRejeitadas.isEmpty()
+					|| !solicitacoesUser.isEmpty() || !fretes.isEmpty();
 
-				out.println("<h3 style='color:#2c7cbd; margin:20px 0 10px;'>Minhas Solicitações — Aguardando Admin (" + aguardandoAdmin.size() + ")</h3>");
-				if (aguardandoAdmin.isEmpty()) {
-					out.println("<p style='color:#999; font-style:italic;'>Nenhuma solicitação aguardando resposta.</p>");
-				} else {
-					out.println("<div class='table-responsive'><table>");
-					out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Peso (kg)</th><th>Status</th><th>Ações</th></tr></thead>");
-					out.println("<tbody>");
-					for (Frete f : aguardandoAdmin) {
-						String origem = (f.getOrigem() != null) ? f.getOrigem() : "-";
-						String destino = (f.getDestino() != null) ? f.getDestino() : "-";
-						String statusStr = (f.getStatus() != null) ? f.getStatus() : "Solicitado";
-						String statusClass = "Solicitado".equals(statusStr) ? "status-solicitado" : "status-em-analise";
-						out.println("<tr>");
-						out.println("<td>" + f.getId() + "</td>");
-						out.println("<td>" + origem + "</td>");
-						out.println("<td>" + destino + "</td>");
-						out.printf("<td>%.2f</td>", f.getPeso());
-						out.println("<td><span class='status-badge " + statusClass + "'>" + statusStr + "</span></td>");
-						out.println("<td><a href='" + request.getContextPath() + "/userResposta?id=" + f.getId() + "' style='color:#2c7cbd;'>Ver detalhes</a></td>");
-						out.println("</tr>");
-					}
-					out.println("</tbody></table></div>");
-				}
-
-				out.println("<h3 style='color:#ff9800; margin:20px 0 10px;'>Proposta do Admin (" + propostaAdmin.size() + ")</h3>");
-				if (propostaAdmin.isEmpty()) {
-					out.println("<p style='color:#999; font-style:italic;'>Nenhuma proposta do admin.</p>");
-				} else {
-					out.println("<div class='table-responsive'><table>");
-					out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Transportadora</th><th>Valor (R$)</th><th>Status</th><th>Ações</th></tr></thead>");
-					out.println("<tbody>");
-					for (Frete f : propostaAdmin) {
-						String origem = (f.getOrigem() != null) ? f.getOrigem() : "-";
-						String destino = (f.getDestino() != null) ? f.getDestino() : "-";
-						String transportadora = (f.getTransportadora() != null) ? f.getTransportadora() : "-";
-						String statusStr = (f.getStatus() != null) ? f.getStatus() : "Em análise";
-						String statusClass = "status-em-analise";
-						out.println("<tr>");
-						out.println("<td>" + f.getId() + "</td>");
-						out.println("<td>" + origem + "</td>");
-						out.println("<td>" + destino + "</td>");
-						out.println("<td>" + transportadora + "</td>");
-						out.printf("<td class='valor-cell'>R$ %.2f</td>", f.getValor());
-						out.println("<td><span class='status-badge " + statusClass + "'>" + statusStr + "</span></td>");
-						out.println("<td><a href='" + request.getContextPath() + "/userResposta?id=" + f.getId() + "' style='color:#2c7cbd;'>Ver detalhes</a></td>");
-						out.println("</tr>");
-					}
-					out.println("</tbody></table></div>");
-				}
-
-				out.println("<h3 style='color:#c0392b; margin:20px 0 10px;'>Rejeitadas pelo Admin (" + rejeitadas.size() + ")</h3>");
-				if (rejeitadas.isEmpty()) {
-					out.println("<p style='color:#999; font-style:italic;'>Nenhuma solicitação rejeitada.</p>");
-				} else {
-					out.println("<div class='table-responsive'><table>");
-					out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Motivo</th><th>Ações</th></tr></thead>");
-					out.println("<tbody>");
-					for (Frete f : rejeitadas) {
-						String origem = (f.getOrigem() != null) ? f.getOrigem() : "-";
-						String destino = (f.getDestino() != null) ? f.getDestino() : "-";
-						String motivo = f.getMotivoRejeicao() != null ? f.getMotivoRejeicao() : "-";
-						out.println("<tr>");
-						out.println("<td>" + f.getId() + "</td>");
-						out.println("<td>" + origem + "</td>");
-						out.println("<td>" + destino + "</td>");
-						out.println("<td style='max-width:200px; overflow:hidden; text-overflow:ellipsis;'>" + motivo + "</td>");
-						out.println("<td><a href='" + request.getContextPath() + "/userResposta?id=" + f.getId() + "' style='color:#2c7cbd;'>Ver detalhes</a></td>");
-						out.println("</tr>");
-					}
-					out.println("</tbody></table></div>");
-				}
+			if (!temConteudo) {
+				out.println("<div class='empty-message'>");
+				out.println("<p>Nenhuma entrega encontrada.</p>");
+				out.println("</div>");
+				out.println("</body></html>");
+				return;
 			}
 
-			if (!fretesConfirmados.isEmpty()) {
-				if (isUserView && !solicitacoes.isEmpty()) {
-					out.println("<h3 style='margin:20px 0 10px;'>Fretes Confirmados</h3>");
+			if (!ofertasAtivas.isEmpty()) {
+				out.println("<h3 style='color:#2196f3; margin:20px 0 10px;'>Ofertas do Admin — Aguardando Aceite (" + ofertasAtivas.size() + ")</h3>");
+				out.println("<div class='table-responsive'><table>");
+				out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Peso</th><th>Transportadora</th><th>Valor</th><th>Data</th><th>Ações</th></tr></thead>");
+				out.println("<tbody>");
+				for (Frete f : ofertasAtivas) {
+					out.println("<tr>");
+					out.println("<td>" + f.getId() + "</td>");
+					out.println("<td>" + (f.getOrigem() != null ? f.getOrigem() : "-") + "</td>");
+					out.println("<td>" + (f.getDestino() != null ? f.getDestino() : "-") + "</td>");
+					out.printf("<td>%.2f kg</td>", f.getPeso());
+					out.println("<td>" + (f.getTransportadora() != null ? f.getTransportadora() : "-") + "</td>");
+					out.printf("<td class='valor-cell'>R$ %.2f</td>", f.getValor());
+					out.println("<td>" + (f.getDataFrete() != null ? f.getDataFrete() : "-") + "</td>");
+					out.println("<td><a href='" + request.getContextPath() + "/userResposta?id=" + f.getId() + "' style='color:#2c7cbd;'>Ver detalhes</a></td>");
+					out.println("</tr>");
 				}
+				out.println("</tbody></table></div>");
+			}
+
+			if (!ofertasAceitas.isEmpty()) {
+				out.println("<h3 style='color:#4caf50; margin:20px 0 10px;'>Ofertas Aceitas (" + ofertasAceitas.size() + ")</h3>");
+				out.println("<div class='table-responsive'><table>");
+				out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Peso</th><th>Transportadora</th><th>Valor</th><th>Data</th></tr></thead>");
+				out.println("<tbody>");
+				for (Frete f : ofertasAceitas) {
+					out.println("<tr>");
+					out.println("<td>" + f.getId() + "</td>");
+					out.println("<td>" + (f.getOrigem() != null ? f.getOrigem() : "-") + "</td>");
+					out.println("<td>" + (f.getDestino() != null ? f.getDestino() : "-") + "</td>");
+					out.printf("<td>%.2f kg</td>", f.getPeso());
+					out.println("<td>" + (f.getTransportadora() != null ? f.getTransportadora() : "-") + "</td>");
+					out.printf("<td class='valor-cell'>R$ %.2f</td>", f.getValor());
+					out.println("<td>" + (f.getDataFrete() != null ? f.getDataFrete() : "-") + "</td>");
+					out.println("</tr>");
+				}
+				out.println("</tbody></table></div>");
+			}
+
+			if (!ofertasRejeitadas.isEmpty()) {
+				out.println("<h3 style='color:#c0392b; margin:20px 0 10px;'>Ofertas Rejeitadas (" + ofertasRejeitadas.size() + ")</h3>");
+				out.println("<div class='table-responsive'><table>");
+				out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Motivo</th></tr></thead>");
+				out.println("<tbody>");
+				for (Frete f : ofertasRejeitadas) {
+					out.println("<tr>");
+					out.println("<td>" + f.getId() + "</td>");
+					out.println("<td>" + (f.getOrigem() != null ? f.getOrigem() : "-") + "</td>");
+					out.println("<td>" + (f.getDestino() != null ? f.getDestino() : "-") + "</td>");
+					out.println("<td style='max-width:200px; overflow:hidden; text-overflow:ellipsis;'>" + (f.getMotivoRejeicao() != null ? f.getMotivoRejeicao() : "-") + "</td>");
+					out.println("</tr>");
+				}
+				out.println("</tbody></table></div>");
+			}
+
+			out.println("<h3 style='color:#2c7cbd; margin:20px 0 10px;'>Minhas Solicitações (" + solicitacoesUser.size() + ")</h3>");
+			if (solicitacoesUser.isEmpty()) {
+				out.println("<p style='color:#999; font-style:italic;'>Nenhuma solicitação registrada.</p>");
+			} else {
+				out.println("<div class='table-responsive'><table>");
+				out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Peso</th><th>Transportadora</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>");
+				out.println("<tbody>");
+				for (Frete f : solicitacoesUser) {
+					String statusStr = (f.getStatus() != null) ? f.getStatus() : "-";
+					String statusClass = "";
+					if ("Solicitado".equals(statusStr)) statusClass = "status-solicitado";
+					else if ("Em análise".equals(statusStr)) statusClass = "status-em-analise";
+					else if ("Rejeitado".equals(statusStr)) statusClass = "status-rejeitado";
+					else if ("Pendente".equals(statusStr)) statusClass = "status-pendente";
+					else if ("Confirmado".equals(statusStr)) statusClass = "status-entregue";
+
+					out.println("<tr>");
+					out.println("<td>" + f.getId() + "</td>");
+					out.println("<td>" + (f.getOrigem() != null ? f.getOrigem() : "-") + "</td>");
+					out.println("<td>" + (f.getDestino() != null ? f.getDestino() : "-") + "</td>");
+					out.printf("<td>%.2f</td>", f.getPeso());
+					out.println("<td>" + (f.getTransportadora() != null ? f.getTransportadora() : "-") + "</td>");
+					out.printf("<td class='valor-cell'>R$ %.2f</td>", f.getValor());
+					out.println("<td><span class='status-badge " + statusClass + "'>" + statusStr + "</span></td>");
+					out.println("<td><a href='" + request.getContextPath() + "/userResposta?id=" + f.getId() + "' style='color:#2c7cbd;'>Ver detalhes</a></td>");
+					out.println("</tr>");
+				}
+				out.println("</tbody></table></div>");
+			}
+
+			if (!fretes.isEmpty()) {
+				out.println("<h3 style='margin:20px 0 10px;'>Fretes Confirmados</h3>");
 				out.println("<div class='table-responsive'>");
 				out.println("<table>");
-				out.println("<thead>"
-						+ "<tr>"
-						+ "<th>ID</th>"
-						+ "<th>Origem</th>"
-						+ "<th>Destino</th>"
-						+ "<th>Peso (kg)</th>"
-						+ "<th>Valor (R$)</th>"
-						+ "<th>Transportadora</th>"
-						+ "<th>Status</th>"
-						+ "<th>Data Frete</th>"
-						+ "<th>Data Entrega</th>"
-						+ "<th>Usuário</th>"
-						+ "<th>Ações</th>"
-						+ "</tr></thead>");
+				out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Peso (kg)</th><th>Valor (R$)</th><th>Transportadora</th><th>Status</th><th>Data Frete</th><th>Data Entrega</th><th>Ações</th></tr></thead>");
 				out.println("<tbody>");
-
-				for (Frete f : fretesConfirmados) {
-					String origem = (f.getOrigem() == null || f.getOrigem().trim().isEmpty()) ? "-" : f.getOrigem();
-					String destino = (f.getDestino() == null || f.getDestino().trim().isEmpty()) ? "-" : f.getDestino();
-					String transportadora = (f.getTransportadora() == null || f.getTransportadora().trim().isEmpty()) ? "-" : f.getTransportadora();
-					String statusStr = (f.getStatus() == null || f.getStatus().trim().isEmpty()) ? "-" : f.getStatus();
-					String dataFrete = (f.getDataFrete() == null) ? "-" : f.getDataFrete().toString();
-					String dataEntrega = (f.getDataEntrega() == null) ? "-" : f.getDataEntrega().toString();
-
+				for (Frete f : fretes) {
 					String statusClass = "";
 					if (f.getStatus() != null) {
 						if ("Pendente".equals(f.getStatus())) statusClass = "status-pendente";
 						else if ("Em trânsito".equals(f.getStatus())) statusClass = "status-em-transito";
 						else if ("Entregue".equals(f.getStatus())) statusClass = "status-entregue";
 					}
-
-					String userName = (f.getUser() != null && f.getUser().getUsername() != null) ? f.getUser().getUsername() : "-";
-
-					boolean isAdmin = userLogado != null && "ADMIN".equalsIgnoreCase(userLogado.getRole());
-					String acoes = isAdmin ? "<a href='" + request.getContextPath() + "/EditarFreteServlet?id=" + f.getId() + "' title='Editar'>✎ Editar</a>" : "-";
-
-					out.printf(
-								"<tr><td>%d</td><td>%s</td><td>%s</td><td>%.2f</td><td class='valor-cell'>R$ %.2f</td><td>%s</td><td class='status-badge %s'>%s</td><td class='data-cell'>%s</td><td class='data-cell'>%s</td><td>%s</td><td>%s</td></tr>",
-								f.getId(), origem, destino, f.getPeso(), f.getValor(), transportadora,
-								statusClass, statusStr, dataFrete, dataEntrega, userName, acoes);
+					out.printf("<tr><td>%d</td><td>%s</td><td>%s</td><td>%.2f</td><td class='valor-cell'>R$ %.2f</td><td>%s</td><td class='status-badge %s'>%s</td><td class='data-cell'>%s</td><td class='data-cell'>%s</td><td>%s</td></tr>",
+							f.getId(), (f.getOrigem() != null ? f.getOrigem() : "-"), (f.getDestino() != null ? f.getDestino() : "-"),
+							f.getPeso(), f.getValor(), (f.getTransportadora() != null ? f.getTransportadora() : "-"),
+							statusClass, (f.getStatus() != null ? f.getStatus() : "-"),
+							(f.getDataFrete() != null ? f.getDataFrete() : "-"), (f.getDataEntrega() != null ? f.getDataEntrega() : "-"),
+							"-");
 				}
 				out.println("</tbody></table></div>");
-			} else if (solicitacoes.isEmpty()) {
+			}
+		} else {
+			if (fretes.isEmpty()) {
 				out.println("<div class='empty-message'>");
-				out.println("<p>📦 Nenhuma Entrega Encontrada</p>");
+				out.println("<p>Nenhuma Entrega Encontrada</p>");
 				out.println("</div>");
+			} else {
+				out.println("<div class='table-responsive'>");
+				out.println("<table>");
+				out.println("<thead><tr><th>ID</th><th>Origem</th><th>Destino</th><th>Peso (kg)</th><th>Valor (R$)</th><th>Transportadora</th><th>Status</th><th>Data Frete</th><th>Data Entrega</th><th>Usuário</th><th>Ações</th></tr></thead>");
+				out.println("<tbody>");
+				for (Frete f : fretes) {
+					String statusClass = "";
+					if (f.getStatus() != null) {
+						if ("Pendente".equals(f.getStatus())) statusClass = "status-pendente";
+						else if ("Em trânsito".equals(f.getStatus())) statusClass = "status-em-transito";
+						else if ("Entregue".equals(f.getStatus())) statusClass = "status-entregue";
+					}
+					String userName = (f.getUser() != null && f.getUser().getUsername() != null) ? f.getUser().getUsername() : "-";
+					String acoes = isAdmin ? "<a href='" + request.getContextPath() + "/EditarFreteServlet?id=" + f.getId() + "' title='Editar'>Editar</a>" : "-";
+					out.printf("<tr><td>%d</td><td>%s</td><td>%s</td><td>%.2f</td><td class='valor-cell'>R$ %.2f</td><td>%s</td><td class='status-badge %s'>%s</td><td class='data-cell'>%s</td><td class='data-cell'>%s</td><td>%s</td><td>%s</td></tr>",
+							f.getId(), (f.getOrigem() != null ? f.getOrigem() : "-"), (f.getDestino() != null ? f.getDestino() : "-"),
+							f.getPeso(), f.getValor(), (f.getTransportadora() != null ? f.getTransportadora() : "-"),
+							statusClass, (f.getStatus() != null ? f.getStatus() : "-"),
+							(f.getDataFrete() != null ? f.getDataFrete() : "-"), (f.getDataEntrega() != null ? f.getDataEntrega() : "-"),
+							userName, acoes);
+				}
+				out.println("</tbody></table></div>");
 			}
 		}
+
 		out.println("</body></html>");
 	}
 
@@ -401,33 +374,40 @@ public class FreteServlet extends HttpServlet {
 		request.setCharacterEncoding("UTF-8");
 		response.setContentType("text/html; charset=UTF-8");
 
+		HttpSession session = request.getSession(false);
+		User userLogado = (session != null) ? (User) session.getAttribute("user") : null;
+		if (userLogado == null || !"ADMIN".equalsIgnoreCase(userLogado.getRole())) {
+			response.sendRedirect("login.jsp");
+			return;
+		}
+
 		try {
 			String origem = request.getParameter("origem");
 			String destino = request.getParameter("destino");
 			double peso = Double.parseDouble(request.getParameter("peso"));
 			double valor = Double.parseDouble(request.getParameter("valor"));
 			String transportadora = request.getParameter("transportadora");
-			String status = request.getParameter("status");
-			if (status == null || status.trim().isEmpty()) {
-				status = "Pendente";
-			}
 			LocalDate dataFrete = LocalDate.parse(request.getParameter("dataFrete"));
-			LocalDate dataEntrega = null;
-			String dataEntregaStr = request.getParameter("dataEntrega");
-			if (dataEntregaStr != null && !dataEntregaStr.trim().isEmpty()) {
-				dataEntrega = LocalDate.parse(dataEntregaStr);
-			}
 			String observacoes = request.getParameter("observacoes");
-
 			String userIdStr = request.getParameter("userId");
+
+			if (userIdStr == null || userIdStr.trim().isEmpty()) {
+				response.sendRedirect("cadastrarFrete.jsp?erro=usuario-obrigatorio");
+				return;
+			}
+
 			User userAssociado = null;
-			if (userIdStr != null && !userIdStr.trim().isEmpty()) {
-				try {
-					UserDAO userDAO = new UserDAO();
-					userAssociado = userDAO.buscarPorId(Long.parseLong(userIdStr));
-				} catch (NumberFormatException e) {
-					// userId inválido, ignora
-				}
+			try {
+				UserDAO userDAO = new UserDAO();
+				userAssociado = userDAO.buscarPorId(Long.parseLong(userIdStr));
+			} catch (NumberFormatException e) {
+				response.sendRedirect("cadastrarFrete.jsp?erro=usuario-invalido");
+				return;
+			}
+
+			if (userAssociado == null) {
+				response.sendRedirect("cadastrarFrete.jsp?erro=usuario-nao-encontrado");
+				return;
 			}
 
 			Frete frete = new Frete();
@@ -436,26 +416,36 @@ public class FreteServlet extends HttpServlet {
 			frete.setPeso(peso);
 			frete.setValor(valor);
 			frete.setTransportadora(transportadora);
-			frete.setStatus(status);
+			frete.setStatus("Solicitado");
 			frete.setDataFrete(dataFrete);
-			frete.setDataEntrega(dataEntrega);
 			frete.setObservacoes(observacoes);
 			frete.setUser(userAssociado);
+			frete.setTipo("SOLICITACAO");
+			frete.setOrigemCriacao("ADMIN");
+			frete.setDataRespostaAdmin(null);
 
-			dao.cadastrarFrete(frete);
-			// Redireciona o parent para a listagem (evita aninhamento de iframes)
+			dao.cadastrarSolicitacao(frete);
+
 			response.setContentType("text/html; charset=UTF-8");
 			PrintWriter out = response.getWriter();
 			out.println("<script>");
 			out.println("  if (window.parent) {");
-			out.println("    window.parent.document.getElementById('mainFrame').src = '" + request.getContextPath() + "/FreteServlet';");
+			out.println("    window.parent.document.getElementById('mainFrame').src = '" + request.getContextPath() + "/FreteServlet?sucesso=oferta-enviada';");
 			out.println("  } else {");
 			out.println("    window.location.href = '" + request.getContextPath() + "/home.jsp';");
 			out.println("  }");
 			out.println("</script>");
 		} catch (Exception e) {
 			e.printStackTrace();
-			response.sendRedirect("cadastrarFrete.jsp?erro=dados-invalidos");
+			response.setContentType("text/html; charset=UTF-8");
+			PrintWriter out = response.getWriter();
+			out.println("<script>");
+			out.println("  if (window.parent) {");
+			out.println("    window.parent.document.getElementById('mainFrame').src = '" + request.getContextPath() + "/FreteServlet?erro=oferta-falhou';");
+			out.println("  } else {");
+			out.println("    window.location.href = '" + request.getContextPath() + "/home.jsp';");
+			out.println("  }");
+			out.println("</script>");
 		}
 	}
 

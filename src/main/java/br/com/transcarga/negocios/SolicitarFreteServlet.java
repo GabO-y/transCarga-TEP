@@ -105,6 +105,7 @@ public class SolicitarFreteServlet extends HttpServlet {
             solicitacao.setObservacoes(observacoes);
             solicitacao.setStatus("Solicitado");
             solicitacao.setTipo("SOLICITACAO");
+            solicitacao.setOrigemCriacao("USER");
             solicitacao.setUser(user);
             solicitacao.setDataRespostaAdmin(null);
 
